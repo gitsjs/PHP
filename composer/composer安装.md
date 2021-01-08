@@ -30,9 +30,13 @@ php -r "unlink('composer-setup.php');"
 2. 执行安装过程。
 3. 删除安装脚本。
 
+
+
 ## 局部安装
 
 上述下载 Composer 的过程正确执行完毕后，可以将 `composer.phar` 文件复制到任意目录（比如项目根目录下），然后通过 `php composer.phar` 指令即可使用 Composer 了！
+
+
 
 ## 全局安装
 

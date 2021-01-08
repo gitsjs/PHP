@@ -12,5 +12,6 @@ topthink/think：作者名称/项目名称
 
 tp5：存放框架的目录
 
-> 使用composer下载ThinkPHP框架时，PHP需要开启扩展：extension=php_openssl.dll
 
+
+> 使用composer下载ThinkPHP框架时，PHP需要开启扩展：extension=php_openssl.dll
