@@ -561,7 +561,7 @@ use think\Db;
     }
 ```
 
-## 2、模型定义
+### 2、模型定义
 
 1.Model即模型，用于处理和配置数据库的相关信息。
 
@@ -581,7 +581,14 @@ class User extends Model
 3.当创建了User模型，控制端可以直接用User模型对象调用表名；
 
 ```
-
+    use app\index\model\User;
+    
+    public function getModelData()
+    {
+        // 使用User模型对象调用表名
+        $data = User::select();
+        return json($data);
+    }
 ```
 
 此时需要引入User模型：use app\index\model\User;
@@ -596,4 +603,46 @@ class User extends Model
 ## 查询数据
 
 ### 1、基本查询
+
+```
+        // 使用find()方法查询一条数据
+        $data = Db::table('tp_user')->find();
+
+        // 使用Db::getLastSql()方法查询最近一条SQL的原生语句
+        $data = Db::getLastSql();
+
+        // 使用where()方法查询指定数据
+        $data = Db::table('tp_user')->where('id',27)->find();
+
+        // 使用findOrFail()方法查询一条数据，没有数据时抛出一个异常
+        $data = Db::table('tp_user')->where('id',1)->findOrFail();
+
+        // 使用findOrEmpty()方法查询一条数据，没有数据时返回一个空数组
+        $data = Db::table('tp_user')->where('id',1)->findOrEmpty();
+
+        // 使用select()方法查询多列数据
+        $data = Db::table('tp_user')->select();
+
+        // 多列数据查询到没有数据时，返回空数组，使用selectOrFail抛出异常
+        $data = Db::table('tp_user')->where('id',1)->selectOrFail();
+
+        // 如果在数据库配置文件中设置了前缀，那么可以使用name()方法忽略前缀
+        $data = Db::name('user')->selectOrFail();
+```
+
+### 2、更多方式查询
+
+```
+        // TinkPHP提供助手函数db查询数据
+        $data = \db('user')->select();
+
+        // 通过valuse()方法可以查询指定字段的值（单个），没有数据返回null
+        $data = Db::name('user')->where('id',27)->value('username');
+
+        // 通过column()方法可以查询指定字段的值（多个），没有数据返回null
+        $data = Db::name('user')->column('username');
+
+        // 指定id作为列值的索引
+        $data = Db::name('user')->column('username','id');
+```
 
