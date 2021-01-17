@@ -1025,3 +1025,93 @@ $result = Db::name('user')->whereTime('create_time','-2 hour')->select();
 $result = Db::name('user')->whereBetweenTimeField('create_time','update_time')->select();
 ```
 
+## 聚合、原生和子查询
+
+### 1、聚合查询
+
+1.使用count()方法，可以求出所查询数据的数量
+
+```
+$result = Db::name('user')->count();
+```
+
+2.count()可设置指定id，比如有空值(Null)的uid，不会计算数量
+
+```
+$result = Db::name('user')->count('uid');
+```
+
+3.使用max()方法，求出所查询数据字段的最大值
+
+```
+$result = Db::name('user')->max('price');
+```
+
+4.如果max()方法，求出的值不是数值，则通过第二参数强制转换
+
+```
+$result = Db::name('user')->max('price',false);
+```
+
+5.使用min()方法，求出所查询数据字段的最小值，也可以强制转换
+
+```
+$result = Db::name('user')->min('price');
+```
+
+6.使用avg()方法，求出所查询数据字段的平均值
+
+```
+$result = Db::name('user')->avg('price');
+```
+
+7.使用sum()方法，求出所查询数据字段的总和
+
+```
+$result = Db::name('user')->sum('price');
+```
+
+### 2、子查询
+
+1.使用fetchSql()方法，可以设置不执行SQL，而返回SQL语句，默认为true
+
+```
+$result = Db::name('user')->fetchSql(true)->select();
+```
+
+2.使用buidSql()方法，也是返回SQL语句，但不需要在执行select()，且有括号
+
+```
+$result = Db::name('user')->buildSql(true);
+```
+
+3.子查询
+
+```
+        $subQuery = Db::name('two')->field('uid')->where('gender','男')->buildSql(true);
+        $result = Db::name('one')->where('id','exp','IN '.$subQuery)->select();
+```
+
+4.使用闭包方式执行子查询
+
+```
+        // 使用闭包方式执行子查询
+        $result = Db::name('one')->where('id','in',function($query){
+            $query->name('two')->where('gender','男')->field('uid');
+        })->select();
+```
+
+### 3、原生查询
+
+1.使用query()方法，进行原生SQL查询，适用于读取操作，SQL错误返回false
+
+```
+$result = Db::query('select * from tp_user');
+```
+
+2.使用execute()方法，进行原生SQL更新写入等，SQL错误返回false
+
+```
+Db::execute('update tp_user set username="孙悟空" where id=29'
+```
+
