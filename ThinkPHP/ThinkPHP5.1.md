@@ -948,3 +948,80 @@ SELECT * FROM `tp_user` WHERE (`email` LIKE 'xiao%' OR `email` LIKE 'wu%')
         $result = Db::name('user')->whereExp('id','IN (19,21,25)')->select();
 ```
 
+## 时间查询
+
+### 1、传统方式
+
+1.使用>、<、>=、<=来筛选匹配时间的数据
+
+```
+$result = Db::name('user')->where('create_time','> time','2018-1-1')->select();
+```
+
+2.使用between关键字开设置时间的区间
+
+```
+$result = Db::name('user')->where('create_time','between time',['2018-1-1','2019-1-1'])->select();
+$result = Db::name('user')->where('create_time','not between time',['2018-1-1','2019-1-1'])->select();
+```
+
+### 2、快捷查询
+
+1.时间查询的快捷方式为whereTime(),直接使用>、<、>=、<=
+
+```
+$result = Db::name('user')->whereTime('create_time','>','2018-1-1')->select();
+```
+
+2.快捷方式也可以使用 between 和 not between
+
+```
+$result = Db::name('user')->whereBetween('create_time',['2018-1-1','2019-1-1'])->select();
+```
+
+3.还有一种快捷方式为：whereBetweenTime()，如果只有一个参数就表示一天
+
+```
+$result = Db::name('user')->whereBetweenTime('create_time','2018-1-1','2019-1-1')->select();
+```
+
+4.默认大于>,可以省略
+
+```
+Db::name('user')->whereTime('create_time', '2018-1-1')->select();
+```
+
+### 3、固定查询
+
+| 关键字     | 说明 |
+| ---------- | ---- |
+| today 或 d | 今天 |
+| yesterday  | 昨天 |
+| week 或 w  | 本周 |
+| last week  | 上周 |
+| month 或 m | 本月 |
+| last month | 上月 |
+| year 或 y  | 今年 |
+| last year  | 去年 |
+
+```
+        $result = Db::name('user')->whereTime('create_time','d')->select();
+        $result = Db::name('user')->whereTime('create_time','y')->select();
+```
+
+
+
+### 4、其他查询
+
+1.查询指定时间的数据，比如两小时内
+
+```
+$result = Db::name('user')->whereTime('create_time','-2 hour')->select();
+```
+
+2.查询两个时间字段时间有效的数据，比如会员开始到结束的期间
+
+```
+$result = Db::name('user')->whereBetweenTimeField('create_time','update_time')->select();
+```
+
