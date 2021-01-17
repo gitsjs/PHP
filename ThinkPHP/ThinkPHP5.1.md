@@ -713,9 +713,9 @@ SELECT * FROM `tp_user` WHERE `id` = 27 ORDER BY `id` DESC LIMIT 1
         return $flag;
 ```
 
-如果新增成功，insert()方法会返回一个 1 值；
+如果新增成功，insert()方法会返回一个 1 值
 
-2.使用data()方法设置添加的数据数组 
+2.使用data()方法设置添加的数据数组
 
 ```
 Db::name('user')->data($data)->insert();
@@ -735,7 +735,7 @@ Db::name('user')->insert($data,true);
 Db::name('user')->insertGetId($data);
 ```
 
-5.使用 insertAll()方法，可以批量新增数据，但要保持数组结构一致； 
+5.使用 insertAll()方法，可以批量新增数据，但要保持数组结构一致；
 
 ```
         $data  = [
@@ -774,7 +774,7 @@ Db::name('user')->insertAll($data,true);
 
 ### 2、修改数据 
 
-1.使用 update()方法来修改数据，修改成功返回影响行数，没有修改返回 0； 
+1.使用 update()方法来修改数据，修改成功返回影响行数，没有修改返回 0
 
 ```
         $data = [
@@ -813,9 +813,9 @@ Db::name('user')->where('id',233)->data($data)->update(['password'=>'456']);
 Db::name('user')->exp('email','UPPER(email)')->update($data);
 ```
 
-增值和减值如果不指定第二个参数，则步长为 1；
+增值和减值如果不指定第二个参数，则步长为 1
 
-6.使用 exp()方法可以在字段中使用 mysql 函数；
+6.使用 exp()方法可以在字段中使用 mysql 函数
 
 ```
 Db::name('user')->exp('email','UPPER(email)')->update($data);
@@ -865,5 +865,86 @@ Db::name('user')->where('id',237)->delete();
 
 ```
 Db::name('user')->delete(true);
+```
+
+## 查询表达式
+
+### 1、比较查询
+
+1.在查询数据进行筛选时，采用where()方法
+
+```
+        // where方法查询
+        $result = Db::name('user')->where('id',20)->find();
+        $result = Db::name('user')->where('id','=',20)->find();
+        return json($result);
+```
+
+where(字段名，查询条件)，where(字段名，表达式，查询条件)
+
+其中，表达式不区分大小写，包括比较、区间和时间、三种类型的查询
+
+2.使用<>、>、<、<=、<=可以筛选出各种符合比较值的数据列表
+
+```
+$result = Db::name('user')->where('id','<>',20)->select();
+```
+
+### 2、区间查询
+
+1.使用like表达式进行模糊查询
+
+```
+$result = Db::name('user')->where('email','like','xiao%')->select();
+```
+
+2.like表达式还可以支持数组传递进行模糊查询
+
+```
+$result = Db::name('user')->where('email','like',['xiao%','wu%'],'or')->select();
+```
+
+SELECT * FROM `tp_user` WHERE (`email` LIKE 'xiao%' OR `email` LIKE 'wu%')
+
+3.like表达式有两个快捷方式whereLike()和whereNotLike()
+
+```
+        $result = Db::name('user')->whereLike('email','xiao%')->select();
+        $result = Db::name('user')->whereNotLike('email','xiao%')->select();
+```
+
+4.between表达式有两个快捷方式whereBetween()和whereNotBetween()
+
+```
+        $result = Db::name('user')->where('id','between','19,25')->select();
+        $result = Db::name('user')->where('id','between',[19,25])->select();
+        $result = Db::name('user')->whereBetween('id',[19,25])->select();
+        $result = Db::name('user')->whereNotBetween('id',[19,25])->select();
+```
+
+5.in表达式有两个快捷方式whereIn()和whereNotIn()
+
+```
+        $result = Db::name('user')->where('id','in','19,21,29')->select();
+        $result = Db::name('user')->whereIn('id','19,21,29')->select();
+        $result = Db::name('user')->whereNotIn('id','19,21,29')->select();
+```
+
+6.null表达式有两个快捷方式whereNull()和whereNotNull()
+
+```
+        $result = Db::name('user')->where('uid','null')->select();
+        $result = Db::name('user')->where('uid','not null')->select();
+        $result = Db::name('user')->whereNull('uid')->select();
+        $result = Db::name('user')->whereNotNull('uid')->select();
+```
+
+### 3、其他查询
+
+1.使用exp可以自定义字段后的SQL语句
+
+```
+        $result = Db::name('user')->where('id','exp','IN (19,21,25)')->select();
+        $result = Db::name('user')->whereExp('id','IN (19,21,25)')->select();
 ```
 
