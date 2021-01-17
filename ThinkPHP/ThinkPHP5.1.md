@@ -187,7 +187,7 @@ RewriteRule ^(.*)$ index.php [L,E=PATH_INFO:$1]
 
 打开publicx.php文件，追加一个方法：
 
-```
+```php
 Container::get('app')->bind('index')->run()->send(); 
 ```
 
@@ -197,7 +197,7 @@ Container::get('app')->bind('index')->run()->send();
 
 7.如果你的应用特别简单，只有一个模块，一个控制器，那改写追加的方法：
 
-```
+```php
 Container::get('app')->bind('index/index')->run()->send(); 
 ```
 
@@ -253,7 +253,7 @@ Container::get('app')->bind('index/index')->run()->send();
 
 例如：
 
-```
+```php
 // 获取应用目录（不区分大小写）
 echo Env::get('app_path');
 // 或者
@@ -282,7 +282,7 @@ echo Env::get('APP_PATH');
 
 2.类名和文件名大小写保持一致，并采用驼峰式（首字母大写）：
 
-```
+```php
 <?php
 namespace app\index\controller;
 
@@ -344,8 +344,10 @@ http://localhost/public/index.php？s=index/hello_world
 
 2.使用json输出，直接采用json函数；
 
-        $data = array('a'=>1,'b'=>2,'c'=>3);
-        return json($data);
+```php
+    $data = array('a'=>1,'b'=>2,'c'=>3);
+    return json($data);
+```
 可以更改配置文件config/app.php默认输出类型为：json
 
         // 默认输出类型
@@ -354,13 +356,13 @@ http://localhost/public/index.php？s=index/hello_world
 
 3.使用view()函数输出模板，开启错误提示，可知道创建模板的默认路径
 
-```
+```php
 return view();
 ```
 
 4，控制器基类Controller中的initialize()方法会在调用控制器方法之前执行；
 
-```
+```php
 <?php
 namespace app\index\controller;
 
@@ -394,7 +396,7 @@ initialize()方法不需要任何返回值，输出用PHP方式，return无效�
 
 可以为某个或某些操作指定前置执行的操作方法，设置beforeArtionList属性可以指定某个方法为其他方法的前置操作。
 
-```
+```php
 <?php
 namespace app\index\controller;
 
@@ -436,7 +438,7 @@ class Before extends Controller
 
 系统的\think\Controller类内置了两个跳转方法success和error，用于跳转提示。
 
-```
+```php
     protected $flag = true;
     public function index()
     {
@@ -484,7 +486,7 @@ class Before extends Controller
 
 1.当访问一个不存在的方法时，系统会报错，可以使用_mepty()来拦截；
 
-```
+```php
     // 访问的方法不存在时,可以使用_empty()拦截
     public function _empty($name)
     {
@@ -494,7 +496,7 @@ class Before extends Controller
 
 2.当访问一个不存在控制器时，系统也会报错，可以使用Error来拦截；
 
-```
+```php
 <?php
 namespace  app\index\controller;
 
@@ -549,7 +551,7 @@ class Error{
 
 5.配置完数据库，使用如下代码在控制器段输数mysql里的数据：
 
-```
+```php
 use think\Db;
 
     public function getNotModelData()
@@ -567,7 +569,7 @@ use think\Db;
 
 2.在项目应用根目录下的index模块创建model文件夹，并且创建User.php:
 
-```
+```php
 <?php
 namespace app\index\model;
 use think\Model;
@@ -580,7 +582,7 @@ class User extends Model
 
 3.当创建了User模型，控制端可以直接用User模型对象调用表名；
 
-```
+```php
     use app\index\model\User;
     
     public function getModelData()
@@ -604,7 +606,7 @@ class User extends Model
 
 ### 1、基本查询
 
-```
+```php
         // 使用find()方法查询一条数据
         $data = Db::table('tp_user')->find();
 
@@ -632,7 +634,7 @@ class User extends Model
 
 ### 2、更多查询
 
-```
+```php
         // TinkPHP提供助手函数db查询数据
         $data = \db('user')->select();
 
@@ -660,7 +662,7 @@ class User extends Model
 
 3.如果想要最后得到结果，可以使用 find()、select()等方法结束查询，find()和 select()是结果查询方法（放在最后），并不是链式查询方法；
 
-```
+```php
 Db::name('user')->where('id', 27)->order('id', 'desc')->find()
 ```
 
@@ -670,14 +672,14 @@ Db::name('user')->where('id', 27)->order('id', 'desc')->find()
 
 我们可以把对象实例保存下来，再进行反复调用即可； 
 
-```
+```php
 $user = Db::name('user'); 
 $data = $user->select();
 ```
 
 2.当同一个对象实例第二次查询后，会保留第一次查询的值；
 
-```
+```php
         $data1 = $user->where('id',27)->order('id','desc')->find();
         $data2 = $user->find();
         return Db::getLastSql();       
@@ -687,7 +689,7 @@ SELECT * FROM `tp_user` WHERE `id` = 27 ORDER BY `id` DESC LIMIT 1
 
 3.使用 removeOption()方法，可以清理掉上一次查询保留
 
-```
+```php
        $data2 = $user ->removeOption('where')->removeOption('order')->find();
        return Db::getLastSql();
 ```
@@ -700,7 +702,7 @@ SELECT * FROM `tp_user` WHERE `id` = 27 ORDER BY `id` DESC LIMIT 1
 
 1.使用 insert()方法可以向数据表添加一条数据
 
-```
+```php
         $data  = [
             'username' => '辉夜',
             'password' => '123',
@@ -717,7 +719,7 @@ SELECT * FROM `tp_user` WHERE `id` = 27 ORDER BY `id` DESC LIMIT 1
 
 2.使用data()方法设置添加的数据数组
 
-```
+```php
 Db::name('user')->data($data)->insert();
 ```
 
@@ -725,19 +727,19 @@ Db::name('user')->data($data)->insert();
 
 3.如果采用的是MySQL数据库，支持REPLACE写入 
 
-```
+```php
 Db::name('user')->insert($data,true);
 ```
 
 4.使用insertGetId()方法，可以在新增成功后犯规当前数据ID 
 
-```
+```php
 Db::name('user')->insertGetId($data);
 ```
 
 5.使用 insertAll()方法，可以批量新增数据，但要保持数组结构一致；
 
-```
+```php
         $data  = [
             [
                 'username' => '辉夜1',
@@ -762,13 +764,13 @@ Db::name('user')->insertGetId($data);
 
 批量新增也支持data()方法 
 
-```
+```php
 Db::name('user')->data($data)->insertAll();
 ```
 
 批量新增也支持 reaplce 写入
 
-```
+```php
 Db::name('user')->insertAll($data,true);
 ```
 
@@ -776,7 +778,7 @@ Db::name('user')->insertAll($data,true);
 
 1.使用 update()方法来修改数据，修改成功返回影响行数，没有修改返回 0
 
-```
+```php
         $data = [
             'username'  =>  '李白'
         ];        
@@ -786,13 +788,13 @@ Db::name('user')->insertAll($data,true);
 
 2.使用data()啊方法传入要修改的数组 
 
-```
+```php
 Db::name('user')->where('id',233)->data($data)->update(['password'=>'456']);
 ```
 
 3.如果修改数组中包含主键，那么可以直接修改 
 
-```
+```php
         $data = [
             'username'  =>  '李白',
             'id'        =>  233
@@ -802,14 +804,14 @@ Db::name('user')->where('id',233)->data($data)->update(['password'=>'456']);
 
 4.使用inc()方法可以对字段增值，dec()方法可以对字段进行减值 
 
-```
+```php
         Db::name('user')->inc('price')->update($data);
         Db::name('user')->dec('price',3)->update($data);
 ```
 
 5.exp()方法可以在字段中使用MySQL函数 
 
-```
+```php
 Db::name('user')->exp('email','UPPER(email)')->update($data);
 ```
 
@@ -817,13 +819,13 @@ Db::name('user')->exp('email','UPPER(email)')->update($data);
 
 6.使用 exp()方法可以在字段中使用 mysql 函数
 
-```
+```php
 Db::name('user')->exp('email','UPPER(email)')->update($data);
 ```
 
 7.使用ram()方法修改更新 
 
-```
+```php
         $data = [
             'username'  =>  '李白',
             'email'     =>  Db::raw('UPPER(email)'),
@@ -835,7 +837,7 @@ Db::name('user')->exp('email','UPPER(email)')->update($data);
 
 8.使用setField()方法可以更新一个字段值 
 
-```
+```php
 Db::name('user')->where('id',233)->setField('username','辉夜');
 ```
 
@@ -845,25 +847,25 @@ Db::name('user')->where('id',233)->setField('username','辉夜');
 
 1.极简删除可以根据主键直接删除，删除成功返回影响行数，否则 0； 
 
-```
+```php
 Db::name('user')->delete(225);
 ```
 
 2.根据主键，还可以删除多条记录；
 
-```
+```php
 Db::name('user')->delete([234,235,236]);
 ```
 
 3.通过where()方法删除 
 
-```
+```php
 Db::name('user')->where('id',237)->delete();
 ```
 
 4.通过 true 参数删除数据表所有数据
 
-```
+```php
 Db::name('user')->delete(true);
 ```
 
@@ -873,7 +875,7 @@ Db::name('user')->delete(true);
 
 1.在查询数据进行筛选时，采用where()方法
 
-```
+```php
         // where方法查询
         $result = Db::name('user')->where('id',20)->find();
         $result = Db::name('user')->where('id','=',20)->find();
@@ -886,7 +888,7 @@ where(字段名，查询条件)，where(字段名，表达式，查询条件)
 
 2.使用<>、>、<、<=、<=可以筛选出各种符合比较值的数据列表
 
-```
+```php
 $result = Db::name('user')->where('id','<>',20)->select();
 ```
 
@@ -894,13 +896,13 @@ $result = Db::name('user')->where('id','<>',20)->select();
 
 1.使用like表达式进行模糊查询
 
-```
+```php
 $result = Db::name('user')->where('email','like','xiao%')->select();
 ```
 
 2.like表达式还可以支持数组传递进行模糊查询
 
-```
+```php
 $result = Db::name('user')->where('email','like',['xiao%','wu%'],'or')->select();
 ```
 
@@ -908,14 +910,14 @@ SELECT * FROM `tp_user` WHERE (`email` LIKE 'xiao%' OR `email` LIKE 'wu%')
 
 3.like表达式有两个快捷方式whereLike()和whereNotLike()
 
-```
+```php
         $result = Db::name('user')->whereLike('email','xiao%')->select();
         $result = Db::name('user')->whereNotLike('email','xiao%')->select();
 ```
 
 4.between表达式有两个快捷方式whereBetween()和whereNotBetween()
 
-```
+```php
         $result = Db::name('user')->where('id','between','19,25')->select();
         $result = Db::name('user')->where('id','between',[19,25])->select();
         $result = Db::name('user')->whereBetween('id',[19,25])->select();
@@ -924,7 +926,7 @@ SELECT * FROM `tp_user` WHERE (`email` LIKE 'xiao%' OR `email` LIKE 'wu%')
 
 5.in表达式有两个快捷方式whereIn()和whereNotIn()
 
-```
+```php
         $result = Db::name('user')->where('id','in','19,21,29')->select();
         $result = Db::name('user')->whereIn('id','19,21,29')->select();
         $result = Db::name('user')->whereNotIn('id','19,21,29')->select();
@@ -932,7 +934,7 @@ SELECT * FROM `tp_user` WHERE (`email` LIKE 'xiao%' OR `email` LIKE 'wu%')
 
 6.null表达式有两个快捷方式whereNull()和whereNotNull()
 
-```
+```php
         $result = Db::name('user')->where('uid','null')->select();
         $result = Db::name('user')->where('uid','not null')->select();
         $result = Db::name('user')->whereNull('uid')->select();
@@ -943,7 +945,7 @@ SELECT * FROM `tp_user` WHERE (`email` LIKE 'xiao%' OR `email` LIKE 'wu%')
 
 1.使用exp可以自定义字段后的SQL语句
 
-```
+```php
         $result = Db::name('user')->where('id','exp','IN (19,21,25)')->select();
         $result = Db::name('user')->whereExp('id','IN (19,21,25)')->select();
 ```
@@ -954,13 +956,13 @@ SELECT * FROM `tp_user` WHERE (`email` LIKE 'xiao%' OR `email` LIKE 'wu%')
 
 1.使用>、<、>=、<=来筛选匹配时间的数据
 
-```
+```php
 $result = Db::name('user')->where('create_time','> time','2018-1-1')->select();
 ```
 
 2.使用between关键字开设置时间的区间
 
-```
+```php
 $result = Db::name('user')->where('create_time','between time',['2018-1-1','2019-1-1'])->select();
 $result = Db::name('user')->where('create_time','not between time',['2018-1-1','2019-1-1'])->select();
 ```
@@ -969,25 +971,25 @@ $result = Db::name('user')->where('create_time','not between time',['2018-1-1','
 
 1.时间查询的快捷方式为whereTime(),直接使用>、<、>=、<=
 
-```
+```php
 $result = Db::name('user')->whereTime('create_time','>','2018-1-1')->select();
 ```
 
 2.快捷方式也可以使用 between 和 not between
 
-```
+```php
 $result = Db::name('user')->whereBetween('create_time',['2018-1-1','2019-1-1'])->select();
 ```
 
 3.还有一种快捷方式为：whereBetweenTime()，如果只有一个参数就表示一天
 
-```
+```php
 $result = Db::name('user')->whereBetweenTime('create_time','2018-1-1','2019-1-1')->select();
 ```
 
 4.默认大于>,可以省略
 
-```
+```php
 Db::name('user')->whereTime('create_time', '2018-1-1')->select();
 ```
 
@@ -1004,7 +1006,7 @@ Db::name('user')->whereTime('create_time', '2018-1-1')->select();
 | year 或 y  | 今年 |
 | last year  | 去年 |
 
-```
+```php
         $result = Db::name('user')->whereTime('create_time','d')->select();
         $result = Db::name('user')->whereTime('create_time','y')->select();
 ```
@@ -1015,13 +1017,13 @@ Db::name('user')->whereTime('create_time', '2018-1-1')->select();
 
 1.查询指定时间的数据，比如两小时内
 
-```
+```php
 $result = Db::name('user')->whereTime('create_time','-2 hour')->select();
 ```
 
 2.查询两个时间字段时间有效的数据，比如会员开始到结束的期间
 
-```
+```php
 $result = Db::name('user')->whereBetweenTimeField('create_time','update_time')->select();
 ```
 
@@ -1031,43 +1033,43 @@ $result = Db::name('user')->whereBetweenTimeField('create_time','update_time')->
 
 1.使用count()方法，可以求出所查询数据的数量
 
-```
+```php
 $result = Db::name('user')->count();
 ```
 
 2.count()可设置指定id，比如有空值(Null)的uid，不会计算数量
 
-```
+```php
 $result = Db::name('user')->count('uid');
 ```
 
 3.使用max()方法，求出所查询数据字段的最大值
 
-```
+```php
 $result = Db::name('user')->max('price');
 ```
 
 4.如果max()方法，求出的值不是数值，则通过第二参数强制转换
 
-```
+```php
 $result = Db::name('user')->max('price',false);
 ```
 
 5.使用min()方法，求出所查询数据字段的最小值，也可以强制转换
 
-```
+```php
 $result = Db::name('user')->min('price');
 ```
 
 6.使用avg()方法，求出所查询数据字段的平均值
 
-```
+```php
 $result = Db::name('user')->avg('price');
 ```
 
 7.使用sum()方法，求出所查询数据字段的总和
 
-```
+```php
 $result = Db::name('user')->sum('price');
 ```
 
@@ -1075,26 +1077,26 @@ $result = Db::name('user')->sum('price');
 
 1.使用fetchSql()方法，可以设置不执行SQL，而返回SQL语句，默认为true
 
-```
+```php
 $result = Db::name('user')->fetchSql(true)->select();
 ```
 
 2.使用buidSql()方法，也是返回SQL语句，但不需要在执行select()，且有括号
 
-```
+```php
 $result = Db::name('user')->buildSql(true);
 ```
 
 3.子查询
 
-```
+```php
         $subQuery = Db::name('two')->field('uid')->where('gender','男')->buildSql(true);
         $result = Db::name('one')->where('id','exp','IN '.$subQuery)->select();
 ```
 
 4.使用闭包方式执行子查询
 
-```
+```php
         // 使用闭包方式执行子查询
         $result = Db::name('one')->where('id','in',function($query){
             $query->name('two')->where('gender','男')->field('uid');
@@ -1105,13 +1107,13 @@ $result = Db::name('user')->buildSql(true);
 
 1.使用query()方法，进行原生SQL查询，适用于读取操作，SQL错误返回false
 
-```
+```php
 $result = Db::query('select * from tp_user');
 ```
 
 2.使用execute()方法，进行原生SQL更新写入等，SQL错误返回false
 
-```
+```php
 Db::execute('update tp_user set username="孙悟空" where id=29'
 ```
 
@@ -1121,7 +1123,7 @@ Db::execute('update tp_user set username="孙悟空" where id=29'
 
 1.表达式查询，就是 where()方法的基础查询方式
 
-```
+```php
     public function index(){
         // 表达式查询，where()方法的基础查询方式
         $result = Db::name('user')->where('id','>',70)->select();
@@ -1133,7 +1135,7 @@ Db::execute('update tp_user set username="孙悟空" where id=29'
 
 2.关联数组查询，通过数组键值对匹配的查询方式
 
-```
+```php
         $result = Db::name('user')->where([
             'gender'    =>  '男',
             'price'     =>  100
@@ -1143,7 +1145,7 @@ Db::execute('update tp_user set username="孙悟空" where id=29'
 
 3.索引数组查询，通过数组里的数组拼装方式来查询
 
-```
+```php
         $result = Db::name('user')->where([
             ['gender','=','男'],
             ['price','=','100']
@@ -1152,7 +1154,7 @@ Db::execute('update tp_user set username="孙悟空" where id=29'
 
 4.将复杂数组组装后，通过变量传递，将增加可读性
 
-```
+```php
         $map[] = ['gender','=','男'];
         $map[] = ['price','in',[60,70,80]];
         $result = Db::name('user')->where($map)->select();
@@ -1160,7 +1162,7 @@ Db::execute('update tp_user set username="孙悟空" where id=29'
 
 5.字符串形式传递
 
-```
+```php
 $result = Db::name('user')->where('gender="男" AND price IN (60,70,80)')->select();
 ```
 
@@ -1168,33 +1170,33 @@ $result = Db::name('user')->where('gender="男" AND price IN (60,70,80)')->selec
 
 1.使用field()方法，可以指定要查询的字段
 
-```
+```php
 $result = Db::name('user')->field('id,username,email')->select();
 $result = Db::name('user')->field(['id','username','email'])->select();
 ```
 
 2.使用field()方法，给指定的字段设置别名
 
-```
+```php
 $result = Db::name('user')->field('id,username as name')->select();
 $result = Db::name('user')->field(['id','username'=>'name'])->select();
 ```
 
 3.在field()方法里，可以直接给字段设置MySQL函数
 
-```
+```php
 $result = Db::name('user')->field('id,SUM(price)')->select();
 ```
 
 4.对于更加复杂的MySQL函数，必须使用字段数组形式
 
-```
+```php
 $result = Db::name('user')->field(['id','LEFT(email,5)'=>'leftemail'])->select();
 ```
 
 5.使用field(true)的布尔参数，可以显式的查询获取所有字段，而不是*
 
-```
+```php
 $result = Db::name('user')->field(true)->select();
 ```
 
@@ -1202,7 +1204,7 @@ SELECT `id`,`username`,`password`,`gender`,`email`,`price`,`details`,`uid`,`stat
 
 6.使用field()方法中字段排除，可以屏蔽掉想要不显示的字段
 
-```
+```php
 $result = Db::name('user')->field('details,email',true)->select();
 $result = Db::name('user')->field(['details','email'],true)->select();
 ```
@@ -1211,7 +1213,7 @@ SELECT `id`,`username`,`password`,`gender`,`price`,`uid`,`status`,`list`,`delete
 
 7.使用field()方法在新增时，验证字段的合法性
 
-```
+```php
         $data  = [
             'username' => '辉夜',
             'password' => '123',
@@ -1229,7 +1231,7 @@ SELECT `id`,`username`,`password`,`gender`,`price`,`uid`,`status`,`list`,`delete
 
 使用alias()方法，给数据库起一个别名
 
-```
+```php
 $result = Db::name('user')->alias('a')->select();
 ```
 
@@ -1237,19 +1239,19 @@ $result = Db::name('user')->alias('a')->select();
 
 1.使用limit()方法，限制获取输出数据的个数
 
-```
+```php
 $result = Db::name('user')->limit(5)->select();
 ```
 
 2.分页模式，即传递两个参数，比如第3条开始显示5条limt(2,5)
 
-```
+```php
 $result = Db::name('user')->limit(2,5)->select();
 ```
 
 3.实现分页，需要严格计算每页显示的条数，然后从第几条开始
 
-```
+```php
         // 实现分页，需要严格计算每页显示的条数，然后从第几条开始
         // 第一页
         $result = Db::name('user')->limit(0,5)->select();
@@ -1261,7 +1263,7 @@ $result = Db::name('user')->limit(2,5)->select();
 
 1.page()分页方法，优化了limit()方法，无需计算分页条数
 
-```
+```php
         // page()分页方法，优化了limit()方法，无需计算分页条数
         // 第一页
         $result = Db::name('user')->page(1,5)->select();
@@ -1273,13 +1275,13 @@ $result = Db::name('user')->limit(2,5)->select();
 
 1.使用order()方法，可以指定排序方式，没有指定第二参数，默认asc
 
-```
+```php
 $result = Db::name('user')->order('id','desc')->select();
 ```
 
 2.支持数组方式，对多个字段进行排序
 
-```
+```php
 $result = Db::name('user')->order(['id'=>'desc','price'=>'asc'])->select();
 ```
 
@@ -1287,13 +1289,13 @@ $result = Db::name('user')->order(['id'=>'desc','price'=>'asc'])->select();
 
 1.使用group()方法，给性别不同的人进行price字段的总和统计
 
-```
+```php
 $result = Db::name('user')->field('gender,SUM(price)')->group('gender')->select();
 ```
 
 2.多字段分组统计
 
-```
+```php
 $result = Db::name('user')->field('gender,SUM(price)')->group('gender,password')->select();
 ```
 
@@ -1331,7 +1333,7 @@ class User extends Model
 3.模型类需要去除表前缀(tp_)，采用驼峰式命名，并且首字母大写
 
 ```
-tp_user(表名)		=>		User
+tp_user(表名)				=>		User
 tp_user_type(表名)		=>		UserType
 ```
 
