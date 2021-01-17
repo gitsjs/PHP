@@ -630,7 +630,7 @@ class User extends Model
         $data = Db::name('user')->selectOrFail();
 ```
 
-### 2、更多方式查询
+### 2、更多查询
 
 ```
         // TinkPHP提供助手函数db查询数据
@@ -644,5 +644,226 @@ class User extends Model
 
         // 指定id作为列值的索引
         $data = Db::name('user')->column('username','id');
+```
+
+## 链式查询
+
+### 1、查询规则 
+
+1.通过指向符号“->”多次连续调用方法称为：链式查询； 
+
+2.当 Db::name('user')时，返回数据库对象，即可连缀数据库对应的方法； 
+
+而每次执行一个数据库查询方法时，比如 where()，还将返回数据库对象；
+
+只要还是数据库对象，那么就可以一直使用指向符号进行链式查询；
+
+3.如果想要最后得到结果，可以使用 find()、select()等方法结束查询，find()和 select()是结果查询方法（放在最后），并不是链式查询方法；
+
+```
+Db::name('user')->where('id', 27)->order('id', 'desc')->find()
+```
+
+### 2、更多查询
+
+1.如果多次使用数据库查询，那么每次静态创建都会生成一个实例，造成浪费；
+
+我们可以把对象实例保存下来，再进行反复调用即可； 
+
+```
+$user = Db::name('user'); 
+$data = $user->select();
+```
+
+2.当同一个对象实例第二次查询后，会保留第一次查询的值；
+
+```
+        $data1 = $user->where('id',27)->order('id','desc')->find();
+        $data2 = $user->find();
+        return Db::getLastSql();       
+```
+
+SELECT * FROM `tp_user` WHERE `id` = 27 ORDER BY `id` DESC LIMIT 1 
+
+3.使用 removeOption()方法，可以清理掉上一次查询保留
+
+```
+       $data2 = $user ->removeOption('where')->removeOption('order')->find();
+       return Db::getLastSql();
+```
+
+   SELECT * FROM `tp_user` LIMIT 1 
+
+## 增删改操作
+
+### 1、新增数据 
+
+1.使用 insert()方法可以向数据表添加一条数据
+
+```
+        $data  = [
+            'username' => '辉夜',
+            'password' => '123',
+            'gender' => '女',
+            'email' => 'huiye@163.com',
+            'price' => 90, 'details' => '123',
+            'create_time' => date('Y-m-d H:i:s')
+        ];
+        $flag = Db::name('user')->insert($data);
+        return $flag;
+```
+
+如果新增成功，insert()方法会返回一个 1 值；
+
+2.使用data()方法设置添加的数据数组 
+
+```
+Db::name('user')->data($data)->insert();
+```
+
+如果你添加一个不存在的数据，会抛出一个异常 Exception
+
+3.如果采用的是MySQL数据库，支持REPLACE写入 
+
+```
+Db::name('user')->insert($data,true);
+```
+
+4.使用insertGetId()方法，可以在新增成功后犯规当前数据ID 
+
+```
+Db::name('user')->insertGetId($data);
+```
+
+5.使用 insertAll()方法，可以批量新增数据，但要保持数组结构一致； 
+
+```
+        $data  = [
+            [
+                'username' => '辉夜1',
+                'password' => '123',
+                'gender' => '女',
+                'email' => 'huiye@163.com',
+                'price' => 90, 'details' => '123',
+                'create_time' => date('Y-m-d H:i:s')
+            ],
+            [
+                'username' => '辉夜2',
+                'password' => '123',
+                'gender' => '女',
+                'email' => 'huiye@163.com',
+                'price' => 90, 'details' => '123',
+                'create_time' => date('Y-m-d H:i:s')
+            ]
+        ];
+        // 使用insertAll()方法，可以批量新增数据
+        Db::name('user')->insertAll($data);
+```
+
+批量新增也支持data()方法 
+
+```
+Db::name('user')->data($data)->insertAll();
+```
+
+批量新增也支持 reaplce 写入
+
+```
+Db::name('user')->insertAll($data,true);
+```
+
+### 2、修改数据 
+
+1.使用 update()方法来修改数据，修改成功返回影响行数，没有修改返回 0； 
+
+```
+        $data = [
+            'username'  =>  '李白'
+        ];        
+        $data = Db::name('user')->where('id',233)->update($data);
+        return $data;
+```
+
+2.使用data()啊方法传入要修改的数组 
+
+```
+Db::name('user')->where('id',233)->data($data)->update(['password'=>'456']);
+```
+
+3.如果修改数组中包含主键，那么可以直接修改 
+
+```
+        $data = [
+            'username'  =>  '李白',
+            'id'        =>  233
+        ];
+        Db::name('user')->data($data)->update(['password'=>'4567']);
+```
+
+4.使用inc()方法可以对字段增值，dec()方法可以对字段进行减值 
+
+```
+        Db::name('user')->inc('price')->update($data);
+        Db::name('user')->dec('price',3)->update($data);
+```
+
+5.exp()方法可以在字段中使用MySQL函数 
+
+```
+Db::name('user')->exp('email','UPPER(email)')->update($data);
+```
+
+增值和减值如果不指定第二个参数，则步长为 1；
+
+6.使用 exp()方法可以在字段中使用 mysql 函数；
+
+```
+Db::name('user')->exp('email','UPPER(email)')->update($data);
+```
+
+7.使用ram()方法修改更新 
+
+```
+        $data = [
+            'username'  =>  '李白',
+            'email'     =>  Db::raw('UPPER(email)'),
+            'price'     =>  Db::raw('price - 3'),
+            'id'        =>  233
+        ];
+        Db::name('user')->update($data);
+```
+
+8.使用setField()方法可以更新一个字段值 
+
+```
+Db::name('user')->where('id',233)->setField('username','辉夜');
+```
+
+
+
+### 3、删除数据 
+
+1.极简删除可以根据主键直接删除，删除成功返回影响行数，否则 0； 
+
+```
+Db::name('user')->delete(225);
+```
+
+2.根据主键，还可以删除多条记录；
+
+```
+Db::name('user')->delete([234,235,236]);
+```
+
+3.通过where()方法删除 
+
+```
+Db::name('user')->where('id',237)->delete();
+```
+
+4.通过 true 参数删除数据表所有数据
+
+```
+Db::name('user')->delete(true);
 ```
 
