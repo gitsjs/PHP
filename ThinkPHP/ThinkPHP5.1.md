@@ -1301,7 +1301,7 @@ $result = Db::name('user')->field('gender,SUM(price)')->group('gender,password')
 
 使用gruop()分组后，再使用having()进行筛选
 
-```
+```php
         $result = Db::name('user')
                 ->field('gender,SUM(price)')
                 ->group('gender')
@@ -1309,3 +1309,110 @@ $result = Db::name('user')->field('gender,SUM(price)')->group('gender,password')
                 ->select();
 ```
 
+## 模型定义
+
+### 1、定义模型
+
+1.定义一个和数据库表名相匹配的模型
+
+```php
+<?php
+namespace app\index\model;
+use think\Model;
+
+class User extends Model
+{
+    
+}
+```
+
+2.模型会自动对应数据表，并且有一套自己的命名规则
+
+3.模型类需要去除表前缀(tp_)，采用驼峰式命名，并且首字母大写
+
+```
+tp_user(表名)		=>		User
+tp_user_type(表名)		=>		UserType
+```
+
+4.如果担心设置的模型类名和PHP关键字冲突，可以开启应用类后缀
+
+在app.php配置文件中开启
+
+```
+    // 应用类库后缀
+    'class_suffix'           => true,
+```
+
+设置完毕后，所有的了类名和模型类名需要加上Controller和Model
+
+```
+class UserController
+class UserModel
+```
+
+### 2、设置模型
+
+1.默认主键为id，你可以设置其他主键,比如uid;
+
+```php
+<?php
+namespace app\index\model;
+use think\Model;
+
+class User extends Model
+{
+    // 设置uid为主键
+    protected $pk = 'uid';
+}
+```
+
+```php
+<?php
+namespace app\index\controller;
+use \app\index\model\User as UserModel;
+
+class User
+{
+    public function index()
+    {
+        // 删除以uid为主键的数据
+        UserModel::destroy('2');
+    }
+}
+```
+
+2.从控制器端调用模型操作，如果和控制器类名重复，可以设置别名
+
+```php
+use \app\index\model\User as UserModel;
+```
+
+3.在模型定义中，可以设置其他的数据表
+
+```php
+protected $table = 'tp_one';
+```
+
+4.模型和控制器一样，也有初始化，必须设置static静态方法
+
+```php
+    // 模型初始化，必须设置static静态方法
+    protected static function init()
+    {
+        // 第一次实例化的时候执行init
+        echo '初始化User模型';
+    }
+```
+
+### 3、模型操作
+
+1.模型操作数据和数据库一样，只不过不需要指定表
+
+```php
+UserModel::select();
+```
+
+2.数据库操作返回的列表是一个二维数组，而模型操作返回的是一个结果集
+
+[[]]	和	[{}]
