@@ -1233,3 +1233,79 @@ SELECT `id`,`username`,`password`,`gender`,`price`,`uid`,`status`,`list`,`delete
 $result = Db::name('user')->alias('a')->select();
 ```
 
+### 4、limit
+
+1.使用limit()方法，限制获取输出数据的个数
+
+```
+$result = Db::name('user')->limit(5)->select();
+```
+
+2.分页模式，即传递两个参数，比如第3条开始显示5条limt(2,5)
+
+```
+$result = Db::name('user')->limit(2,5)->select();
+```
+
+3.实现分页，需要严格计算每页显示的条数，然后从第几条开始
+
+```
+        // 实现分页，需要严格计算每页显示的条数，然后从第几条开始
+        // 第一页
+        $result = Db::name('user')->limit(0,5)->select();
+        // 第二页 
+        $result = Db::name('user')->limit(5,5)->select();
+```
+
+### 5、page
+
+1.page()分页方法，优化了limit()方法，无需计算分页条数
+
+```
+        // page()分页方法，优化了limit()方法，无需计算分页条数
+        // 第一页
+        $result = Db::name('user')->page(1,5)->select();
+        // 第二页
+        $result = Db::name('user')->page(2,5)->select();
+```
+
+### 6、order
+
+1.使用order()方法，可以指定排序方式，没有指定第二参数，默认asc
+
+```
+$result = Db::name('user')->order('id','desc')->select();
+```
+
+2.支持数组方式，对多个字段进行排序
+
+```
+$result = Db::name('user')->order(['id'=>'desc','price'=>'asc'])->select();
+```
+
+### 7、group
+
+1.使用group()方法，给性别不同的人进行price字段的总和统计
+
+```
+$result = Db::name('user')->field('gender,SUM(price)')->group('gender')->select();
+```
+
+2.多字段分组统计
+
+```
+$result = Db::name('user')->field('gender,SUM(price)')->group('gender,password')->select();
+```
+
+### 8、having
+
+使用gruop()分组后，再使用having()进行筛选
+
+```
+        $result = Db::name('user')
+                ->field('gender,SUM(price)')
+                ->group('gender')
+                ->having('SUM(price)>600')
+                ->select();
+```
+
