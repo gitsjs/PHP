@@ -731,7 +731,7 @@ Db::name('user')->data($data)->insert();
 Db::name('user')->insert($data,true);
 ```
 
-4.使用insertGetId()方法，可以在新增成功后犯规当前数据ID 
+4.使用insertGetId()方法，可以在新增成功后返回当前数据ID 
 
 ```php
 Db::name('user')->insertGetId($data);
@@ -768,7 +768,7 @@ Db::name('user')->insertGetId($data);
 Db::name('user')->data($data)->insertAll();
 ```
 
-批量新增也支持 reaplce 写入
+批量新增也支持 replace 写入
 
 ```php
 Db::name('user')->insertAll($data,true);
@@ -1418,3 +1418,137 @@ UserModel::select();
 2.数据库操作返回的列表是一个二维数组，而模型操作返回的是一个结果集
 
 [[]]	和	[{}]
+
+## 模型添加与删除
+
+### 1、数据添加
+
+1.使用实例化的方式添加一条数据，首先实例化方式如下，两种均可
+
+```php
+        // 实例化模型对象
+        $user = new UserModel();
+        $user = new \app\index\model\User();
+```
+
+2.设置要新增的数据，然后用save()方法写入到数据库中，save()返回布尔值
+
+```php
+        // 实例化模型对象
+        $user = new UserModel();
+        // $user = new \app\index\model\User();
+
+		// 用save()方法写入到数据库中，save()返回布尔值
+        $user->username     = '李白';
+        $user->password     = '123';
+        $user->gender       = '男';
+        $user->email        = 'libai@163.com';
+        $user->price        = 100;
+        $user->details      = '123';
+        $user->uid          = 1011;
+        $user->create_time  = date('Y-m-d H:i:s');
+        $user->save();
+```
+
+3.也可以通过save()传递数据数组的方式，来新增数据
+
+```php
+        // 实例化模型对象
+        $user = new UserModel();
+        // $user = new \app\index\model\User();
+
+        // 通过save()传递数据数组的方式，来新增数据
+        $user ->save([
+            'username'     => '李白',
+            'password'     => '123',
+            'gender'       => '男',
+            'email'        => 'libai@163.com',
+            'price'        => 100,
+            'details'      => '123',
+            'uid'          => 1011,
+            'create_time'  => date('Y-m-d H:i:s')
+        ]);
+```
+
+4.模型新增也提供了replace()方法来实现REPLACE into新增
+
+```php
+$user->replace()->save();
+```
+
+5.当新增成功后，使用$user->id,可以获得自增ID(主键需要是id)
+
+```php
+echo $user->id;
+```
+
+6.使用save()方法，可以批量新增数据，返回批量新增的数组
+
+```php
+        $dataAll = [
+            [
+                'username'     => '李白',
+                'password'     => '123',
+                'gender'       => '男',
+                'email'        => 'libai@163.com',
+                'price'        => 100,
+                'details'      => '123',
+                'uid'          => 1011,
+                'create_time'  => date('Y-m-d H:i:s')
+            ],
+            [
+                'username'     => '李白',
+                'password'     => '123',
+                'gender'       => '男',
+                'email'        => 'libai@163.com',
+                'price'        => 100,
+                'details'      => '123',
+                'uid'          => 1011,
+                'create_time'  => date('Y-m-d H:i:s')
+            ]
+        ];
+        $user = new UserModel();
+        print_r($user->saveAll($dataAll));
+```
+
+### 2、数据删除
+
+1.使用get()方法，通过主键(id)查询到想要删除的数据
+
+```php
+$user = UserModel::get(247);
+```
+
+2.然后再通过delete()方法，将数据删除，返回布尔值
+
+```php
+$user->delete();
+```
+
+3,也可以使用静态方法调用destroy()方法，通过主键(id)删除数据
+
+```php
+UserModel::destroy(253);
+```
+
+4.静态方法destroy()方法，也可以批量删除数据
+
+```php
+        UserModel::destroy('250,251,252');
+        UserModel::destroy([250,251,252]);
+```
+
+5.通过数据库类的查询条件删除
+
+```php
+UserModel::where('id','>',248)->delete();
+```
+
+6.使用闭包的方式进行删除
+
+```php
+        UserModel::destroy(function($query){
+           $query->where('id','=',248);
+        });
+```
+
