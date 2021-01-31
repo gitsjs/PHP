@@ -1552,3 +1552,180 @@ UserModel::where('id','>',248)->delete();
         });
 ```
 
+## 模型修改和查询
+
+### 1、数据修改
+
+1.使用get()方法通过主键获取数据，再通过save()方法保存修改，返回布尔值
+
+```php
+    public function update()
+    {
+        $user = UserModel::get(76);
+        $user -> username  = '李黑';
+        $user -> email     = 'lihe@163.com';
+        $user -> save();
+    }
+```
+
+2.通过where()方法结合find()方法的查询条件获取数据，进行修改
+
+```php
+        $user = UserModel::where('username','李黑')->find();
+        $user -> username  = '李白';
+        $user -> email     = 'libai@163.com';
+        $user -> save();
+```
+
+3.save()方法只会更新变化的数据，如果提交的数据没有变化，则不更新；
+
+但如果你想强制更新数据，可以使用force()方法
+
+```php
+$user -> force()->save();
+```
+
+4.DB::raw()执行SQL函数的方式，更新数据
+
+```php
+$user -> price  = Db::raw('price+1');
+```
+
+5.如果只是单纯的增减数据，可以使用Inc/dec
+
+```php
+$user -> pirce  = ['inc',1];
+```
+
+6.直接通过save([],[])两个数组参数方式更新数据
+
+```php
+        $user->save([
+            'username'  => '李黑',
+            'email'     =>  'lihe@163.com'
+        ], ['id' => '76']);
+```
+
+7.通过savaAll()方法,可以批量修改数据，返回被修改的数据集合
+
+```php
+        $list = [
+            ['id' => 76, 'username' => '李白', 'email' => 'libai@163.com'],
+            ['id' => 77, 'username' => '李白', 'email' => 'libai@163.com'],
+            ['id' => 78, 'username' => '李白', 'email' => 'libai@163.com']
+        ];
+        $user->saveAll($list);
+```
+
+批量更新savaAll()方法只能通过主键id进行更新
+
+8.使用静态方法结合update()方法更新数据，返回的是影响行数
+
+```php
+        UserModel::where('id', 77)->update([
+            'username'  => '李黑',
+            'email'     => 'lihei@163.com'
+        ]);
+```
+
+另外一种静态方法update()，返回的是对象实例
+
+```php
+        UserModel::update([
+            'id'        => '78',
+            'username'  => '李黑',
+            'email'     => 'lihei@163.com'
+        ]);
+```
+
+模型的新增和修改都是save()进行执行的，它采用了自动识别体系来完成
+
+实例化模型后调用save()方法表示新增，查询数据后调用save()表示修改
+
+如果在save()传入更新数据条件后也表示修改
+
+如果编写的代码比价复杂的化，可以使用isUpate()方法显示操作;
+
+```php
+// 显示更新
+$user->isUpdate(true)->save();
+// 显示新增
+$user->isUpdate(false)->save();
+```
+
+### 2、数据查询
+
+1.使用get()方法，通过主键(id)查询到想要的数据
+
+```php
+        $user = UserModel::get(76);
+        return json($user);
+```
+
+2.也可以通过where()方法进行条件筛选查询数据
+
+```php
+        $user = UserModel::where('username', '李白')->find();
+        return json($user);
+```
+
+不管是get()方法还是find()方法，如果数据不存在则返回null
+
+和数据库查询一样，模型也有getOrFaill()方法，数据不存在抛出异常
+
+还有findOrEmpty()方法，数据不存在返回空模型
+
+通过模型->符号，可以得到单独的字段数据
+
+```
+return $user->username;
+```
+
+3.如果在模型内部获取数据，请不要用$this->username,而用如下方法:
+
+```php
+    // 如果在模型内部获取数据，请不要用$this->username
+    public function getUserName()
+    {
+        return self::where('username', '李白')->find()->getAttr('username');
+    }
+```
+
+```php
+        $user = new UserModel;
+        return $user->getUserName();
+```
+
+4.通过all()方法，实现IN模式的多数据获取
+
+```php
+        $user = UserModel::all('76,77,78');
+        $user = UserModel::all([76, 77, 128]);
+```
+
+5.使用链式查询得到数据
+
+```php
+$user = UserModel::where('gender', '男')->order('id', 'asc')->limit(2)->select();
+```
+
+6.获取某个字段或者某个列的值
+
+```php
+        $user = UserModel::where('id', 77)->value('username');
+        $user = UserModel::whereIn('id', [77, 78, 79])->column('username', 'id');
+```
+
+7.模型支持动态查询：getBy*, *带代表字段名
+
+```php
+        $user = UserModel::getByUsername('李白');
+        $user = UserModel::getByEmail('lihei@163.com');
+```
+
+8.模型支持聚合查询
+
+```php
+$user = UserModel::max('price');
+```
+
