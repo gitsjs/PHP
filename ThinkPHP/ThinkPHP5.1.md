@@ -1944,3 +1944,10 @@ withSearch()中第一个数组参数，限定搜索器的字段，第二个则�
 
 7.使用diff()和intersect()方法可以计算两个数据集的差集和交集
 
+```php
+        $result1 = UserModel::where('price', '>', '80')->select();
+        $result2 = UserModel::where('price', '<', '100')->select();
+        return json($result1->diff($result2));
+        return json($result1->intersect($result2));
+```
+
