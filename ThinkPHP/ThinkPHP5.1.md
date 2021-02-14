@@ -1951,3 +1951,149 @@ withSearch()中第一个数组参数，限定搜索器的字段，第二个则�
         return json($result1->intersect($result2));
 ```
 
+## 模型自动时间戳和只读字段
+
+### 1、模型自动时间戳
+
+1.系统自动创建和更新时间戳功能默认为关闭状态
+
+如果想全局开启，在database.php中，设置为true
+
+```php
+    // 自动写入时间戳字段
+    'auto_timestamp'  => 'datetime',
+```
+
+2.如果只想设置某一个模型开启，需要设置特有字段
+
+```php
+    // 模型自动时间戳 只想设置某一个模块开启，需要设置特有字段
+    protected $autoWriteTimestamp = true;
+```
+
+还有一种方法，就是全局开启，单独关闭某个或某几个模型为false
+
+自动时间戳开启后，会自动写入create_time和update_time两个字段
+
+此时，它们默认的类型为int，如果是时间类型，可以更改如下
+
+```php
+ 'auto_timestamp'  => 'datetime',	//或
+ protected $autoWriteTimestamp = 'datetime';
+```
+
+自动时间戳只能在模型下有效，数据库方法不可以使用
+
+3.如果创建和修改时间戳不是默认定义的，也可以自定义
+
+```php
+protected $createTime = 'create_at';
+protected $updateTime = 'update_at';
+```
+
+如果业务中只需要create_time而不需要update_time，可以关闭它
+
+```php
+protected $updateTime = false;
+```
+
+也可以设置动态实现不修改update_time，具体如下
+
+```php
+$user->isAutoWriteTimestamp(false)->save();
+```
+
+### 2、模型只读字段
+
+1.模型中可以设置只读字段，就是无法被修改的字段设置
+
+要设置username和email不允许被修改
+
+```php
+protected $readonly = ['username','email'];
+```
+
+除了在模型端设置，也可以动态设置只读字段
+
+```php
+$user->readonly(['username','email'])->save();
+```
+
+只读字段只支持模型方法不支持数据库方式
+
+## 模型类型转换和数据完成
+
+### 1、模型类型转换
+
+1.系统可以通过模型端设置写入或读取时对字段类型进行转换，通过读取的方式来演示部分效果
+
+在模型端设置你想要类型转换的字段属性，属性值为数值
+
+```php
+    protected $type = [
+        'price'         =>  'integer',
+        'status'        =>  'boolean',
+        'create_time'   =>  'datetime:Y-m-d'
+    ];
+```
+
+数据库查询读取的字段很多都是字符串类型，可以转换成如下类型：
+
+integer(整形)、float(浮点型)、boolean(布尔型)、array(数组)、object(对象)、serialize(序列化)、json(json)、timestamp(时间戳)、datetime(日期)
+
+由于数据库没有那么多类型演示，常用度不显著
+
+```php
+    public function typeConversion()
+    {
+        $user = UserModel::get(21);
+        var_dump($user->price);
+        var_dump($user->status);
+        var_dump($user->create_time);
+    }
+```
+
+类型转换还是会调用属性里的获取器等操作，编码时要注意这方面的问题
+
+### 2、模型数据完成
+
+1.模型中数据完成通过auto、insert、和update三种形式完成
+
+auto表示新增和修改操作，insert只表示新增，update只表示修改
+
+```php
+    protected $atuo   = ['email'];
+    protected $insert = ['uid' => 1];
+    protected $update = [];
+```
+
+当insert时，新增一条数据时会触发新增数据完成，此时，并不需要自己去新增uid，它会自动给uid赋值为1
+
+```php
+        // 实例化模型对象
+        $user = new UserModel();
+
+        // 用save()方法写入到数据库中，save()返回布尔值
+        $user->username     = '李白';
+        $user->password     = '123';
+        $user->gender       = '男';
+        $user->email        = 'libai@163.com';
+        $user->price        = 100;
+        $user->details      = '123';
+        $user->uid          = 1011;
+        $user->create_time  = date('Y-m-d H:i:s');
+        $user->save();
+```
+
+auto表示新增和修改均要自动完成，而不给默认值的字段需要修改器提供
+
+```php
+    public function setEmailAttr($value)
+    {
+        return strtoupper($value);
+    }
+```
+
+新增时，邮箱字符串会给修改器自动完成大写，那数据完成的意义何在？
+
+修改时，如果你不去修改邮箱，在数据自动完成强制完成，会自动完成大写，也就是说，邮箱的大写，设置update更加合适，因为新增必填必触发修改器，对于update自动完成，和auto、insert一样。
