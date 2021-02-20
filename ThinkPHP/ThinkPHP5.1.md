@@ -2098,3 +2098,233 @@ auto表示新增和修改均要自动完成，而不给默认值的字段需要�
 
 修改时，如果你不去修改邮箱，在数据自动完成强制完成，会自动完成大写，也就是说，邮箱的大写，设置update更加合适，因为新增必然触发修改器，对于update自动完成，和auto、insert一样。
 
+## 模型查询范围和输出
+
+### 1、模型查询范围
+
+1.在模型端创建一个封装的查询方法或写入方法，方便控制器调用
+
+比如：封装一个筛选所有性别为男的查询，并且只显示部分字段5条
+
+方法名规范：前缀scope，后缀随意，调用时直接把后缀作为参数使用
+
+```php
+    public function scopeGenderMale($query)
+    {
+        $query->where('gender', '男')->field('id, username, gender, email')->limit(5);
+    }
+```
+
+在控制器端，直接调用并输出结果
+
+```php
+    public function queryScope()
+    {
+        $result = UserModel::scope('gendermale')->select();
+        return json($result);
+    }
+```
+
+也可以实现多个查询封装方法连缀调用，比如找出邮箱xia并大于80分的
+
+```php
+    public function scopeEmailLike($query, $value)
+    {
+        $query->where('email', 'like', '%' . $value . '%');
+    }
+    public function scopePriceGreater($query, $value)
+    {
+        $query->where('price', '>', 80);
+    }
+```
+
+```php
+        $result = UserModel::emailLike('xiao')->priceGreater(80)->select();
+```
+
+查询范围只能使用find()和select()两种方法
+
+2.全局范围查询，就是在此模型下不管怎么查询都会加上全局条件
+
+```php
+    protected function base($query)
+    {
+        $query->where('status', 1);
+    }
+```
+
+在定义了全局查询后，如果某些不需要全局查询可以使用useGlobalScope取消
+
+```php
+UserModel::useGlobalScope(false)
+```
+
+当然，设置为true，则开启全局范围查询，注意：这个方法需要跟在::后面
+
+```php
+userModel::useGlobalScope(true)
+```
+
+### 2、模型输出方式
+
+1.通过模板进行数据输出
+
+```php
+    public function view()
+    {
+        $user = UserModel::get(21);
+        $this->assign('user', $user);
+        return $this->fetch();
+    }
+```
+
+根据错误提示，可以创建相对应的模板，然后进行数据显示
+
+```php
+{$user.username}.{$user.gender}.{$user.email}
+```
+
+2.使用toArray()方法，将对象按照数组的方式输出
+
+```php
+print_r($user->toArray());
+```
+
+和之前的数据集一样，它也支持hidden、append、visible等方法
+
+```php
+print_r($user->hidden(['password,update_time'])->toArray());
+```
+
+toArray()方法也支持all()和select()等列表数据
+
+```php
+print_r(UserModel::select()->toArray());
+```
+
+使用toJson()方法将数据对象进行序列化操作，也支持hidden等方法
+
+```php
+print_r($user->toJson());
+```
+
+## JSON字段
+
+### 1、数据库JSON
+
+1.数据库写入JSON字段，直接通过数组的方式即可完成
+
+```php
+    public function json()
+    {
+        $data = [
+            'username'  => '辉夜',
+            'password'  => '123',
+            'gender'    => '女',
+            'email'     => 'huiye@163.com',
+            'price'     => 90, 'details' => '123',
+            'uid'       => 1011,
+            'status'    => 1,
+            'list'      => ['username' => '辉夜', 'gender' => '女', 'email' => 'huiye@163.com'],
+        ];
+        Db::name('user')->insert($data);
+```
+
+从上面写入可以看出，list字段设置的是json格式，通过数组写入的就是json
+
+如果写入details字段是text文本格式，通过数组会报错，这个时候，采用->json(['details'])方法来进行转换，也可以写入json数据
+
+```php
+'details'   => ['content' => 123],
+```
+
+```php
+Db::name('user')->json(['details'])->insert($data);
+```
+
+在查询上，也可以使用->json(['list,details'])方法来获取数据
+
+```php
+        $user = Db::name('user')->json(['list', 'details'])->where('id', 280)->find();
+        return json($user);
+```
+
+如果将json字段里的数据作为查询条件，可以通过如下方式实现
+
+```php
+        $user = Db::name('user')->json(['list', 'details'])->where('list->username', '辉夜')->find();
+        return json($user);
+```
+
+如果完全修改json数据，可以使用如下的方式实现
+
+```php
+        $data['list'] = ['username' => '李白', 'gender' => '男'];
+        Db::name('user')->json(['list'])->where('id', 279)->update($data);
+```
+
+如果只想修改json数据里的某一个项目，可以使用如下的方式实现
+
+```php
+        $data['list->username'] = '李黑';
+        Db::name('user')->json(['list'])->where('id', 279)->update($data);
+```
+
+### 2、模型JSON
+
+1.使用模型方式去对新增包含json数据的字段
+
+```php
+        $user = new UserModel();
+        $user->username = '李白';
+        $user->password = '123';
+        $user->gender = '男';
+        $user->email = 'libai@163.com';
+        $user->price = 100;
+        $user->uid = 1011;
+        $user->status = 1;
+        $user->details = ['content' => 123];
+        $user->list = ['username' => '辉夜', 'gender' => '女 ', 'email' => 'huiye@163.com', 'uid' => 1011];
+        $user->save();
+```
+
+2.对于本身不是json字段，想要写入json字段的字符字段，需要设置
+
+```php
+protected $json = ['details', 'list'];
+```
+
+3.也可以通过对象的方式，进行对json字段的写入操作
+
+```php
+        $list = new \StdClass();
+        $list->username = '辉夜';
+        $list->gender = '女';
+        $list->email = 'huiye@163.com';
+        $list->uid = 1011;
+        $user->list = $list;
+```
+
+通过对象调用方式，直接获取json里面的数据
+
+```php
+        $user = UserModel::get(279);
+        return $user->list->username;
+```
+
+通过json的数据查询，获取一条数据
+
+```php
+        $user = UserModel::where('list->username', '辉夜')->find();
+        return $user->list->email;
+```
+
+更新修改json数据，直接通过对象方式即可
+
+```php
+        $user = UserModel::get(279);
+        $user->list->username = '李白';
+```
+
+  
+
