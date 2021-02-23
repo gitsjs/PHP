@@ -2326,5 +2326,427 @@ protected $json = ['details', 'list'];
         $user->list->username = '李白';
 ```
 
-  
+##   软删除
+
+### 1、数据库软删除
+
+1.所谓的软删除，并不是真正的删除数据，而是给数据设置一个标记
+
+首先，需要在数据表创建一个delete_time，默认为Null
+
+其次，使用软删除功能，软删除其实就是update操作，创建一个时间标记
+
+```php
+        Db::name('user')->where('id', 78)
+            ->useSoftDelete('delete_time', date('Y-m-d H:i:s'))
+            ->delete();
+        return Db::getLastSql();
+```
+
+### 2、模型软删除
+
+1.定义好模型后，我们就可以使用
+
+```php
+        User::destroy(1);
+        // 真实删除
+        User::destroy(1, true);
+
+        $user = User::get(1);
+        // 软删除
+        $user->delete();
+        // 真实删除
+        $user->delete(true);
+```
+
+2.首先，需要在模型端设置软删除的功能，引入softDelete,它是trait；
+
+```php
+    use SoftDelete;
+    protected $deleteTime = 'delete_time';
+```
+
+delete_time默认设置是Null，如果想更改这个默认值，可以设置
+
+```php
+// protected $defaultSoftDelete = 0;
+```
+
+默认情况下，开启了软删除功能的查询，模型会自动屏蔽被软删除的数据
+
+```php
+        $user = UserModel::select();
+        return json($user);
+```
+
+在开启软删除功能的前提下，使用withTrashed()方法取消屏蔽软删除的数据
+
+```php
+        $user = UserModel::WithTrashed()->select();
+        return json($user);
+```
+
+如果只想查询软删除的数据，使用onlyTrashed()方法即可
+
+```php
+        $user = UserModel::onlyTrashed()->select();
+        return json($user);
+```
+
+如果想让某一条软删除的数据恢复到正常数据，可以使用restore()方法
+
+```php
+        $user = UserModel::onlyTrashed()->find();
+        $user->restore();
+```
+
+如果想让一条软删除的数据真正删除，在恢复正常后，使用 delete(true);
+
+```php
+        $user = UserModel::onlyTrashed()->get(78);
+        $user->restore();
+        $user->delete(true);
+```
+
+## 模板引擎和视图渲染
+
+### 1、模板引擎
+
+1.MVC中，M(模型)和C(控制器)，而V(视图)，也就是模板页面，是MVC中第三个核心内容
+
+2.模板引擎分为两种，一种内置的，一种外置作为插件引入的，用内置的即可，内置的模板引擎的配置文件是confing/template.php，默认情况下不需要修改任何参数，view_path默认是view目录
+
+### 2、视图引擎
+
+1.在控制器端，首先继承一下控制器基类(不是必须，助手函数也行)
+
+2.先采用第一种不带任何参数的最典型的做法(自动定位)，看它报错信息
+
+```php
+<?php
+
+namespace app\index\controller;
+
+use think\Controller;
+
+class See extends Controller
+{
+    public function index()
+    {
+        // 自动定位
+        return $this->fetch();
+    }
+}
+```
+
+3.模板路径为：当前模块/view/当前控制器名(小写)/当前操作(小写).html
+
+4.如果想制定一个输出的模板，可以在fetch()方法传递相应的参数
+
+```php
+        return $this->fetch('edit');                //指定模板
+        return $this->fetch('public/edit');         //目录下的模板
+        return $this->fetch('admin@public/edit');   //指定模块下的模板
+        return $this->fetch('/edit');               //view_path下的模板
+```
+
+5.如果没有继承Controller控制器的话，可以使用助手函数view()方法
+
+```php
+return view('edit');
+```
+
+## 视图赋值和过滤
+
+### 1、视图赋值
+
+1.在继承控制器基类的情况下，可以使用assign()方法进行赋值
+
+```php
+        $this->assign('name', 'ThinkPHP');
+        return $this->fetch('index');
+```
+
+2.也可以通过数组的方式，进行多个变量的赋值
+
+```php
+        $this->assign([
+            'username'      =>      '辉夜',
+            'email'         =>      'huiye@163.com'
+        ]);
+```
+
+3.assign()方法和fetch()方法也可以合二为一进行操作
+
+```php
+        return $this->fetch('index', [
+            'username'      =>      '辉夜',
+            'email'         =>      'huiye@163.com'
+        ]);
+```
+
+4.使用display()方法，可以不通过模板直接解析变量
+
+```php
+        $content = '{$username}.{$email}';
+        return $this->display($content, [
+            'username'      =>      '辉夜',
+            'email'         =>      'huiye@163.com'
+        ]);
+```
+
+5.使用view()助手函数实现渲染并赋值操作
+
+```php
+        // 使用view()助手函数实现渲染并赋值操作
+        return view('index', [
+            'username'      =>      '辉夜',
+            'email'         =>      'huiye@163.com'
+        ]);
+
+        return view('index')->assign([
+            'username'      =>      '辉夜',
+            'email'         =>      'huiye@163.com'
+        ]);
+```
+
+6.使用view::share()静态方法，可以在系统任意位置做全局变量赋值
+
+```php
+\think\facade\View::share('key', 'value');  // 也支持数组
+```
+
+### 2、视图过滤
+
+1.如果需要对模板页面输出的变量进行过滤，可以使用filter()方法
+
+```php
+        $this->filter(function ($content) {
+            return str_replace('1', '<br/>', $content);
+        })->fetch();
+
+        return view('index')->assign([
+            'username'      =>      '辉1夜',
+            'email'         =>      'huiye@163.com'
+        ]);
+```
+
+这里的$content表示所有的模板变量，找到1之后，实现换行操作
+
+2.如果控制器有N个方法，都需要过滤，可以直接初始化中全局过滤
+
+```php
+    public function initialize()
+    {
+        return $this->filter(function ($content) {
+            return str_replace('1', '<br/>', $content);
+        });
+    }
+```
+
+也可以使用函数实现模板变量的过滤功能
+
+```php
+		return view()->filter(function ($content) {
+            return str_replace('1', '<br/>', $content);
+        });
+```
+
+## 模板变量输出
+
+### 1、变量输出
+
+1.模板变量的输出方式，控制器实现赋值
+
+```php
+$this->assing('name','ThinkPHP');
+```
+
+当模板位置创建好后，输出控制器的赋值变量时，用花括号和$符号
+
+```php
+{$name}
+```
+
+当程序运行的时候，会在runtime/temp目录下生成一个编译文件
+
+```php
+<?php echo htmlentities($name); ?>
+```
+
+2.如果传递的值是数组，那么编译文件也会自动相应的对应输出方式
+
+```php
+    public function varOutput()
+    {
+        $data['username']       =      '辉夜';
+        $data['email']          =      'huiye@163.com';
+        $this->assign('user', $data);
+        return $this->fetch('var');
+    }
+```
+
+模板调用：
+
+```php
+{$user.username}.{$user.email} //或{$user['email']} 
+```
+
+编译文件：
+
+```php
+<?php echo htmlentities($user['username']); ?>.<?php echo htmlentities($user['email']); ?>
+```
+
+3.如果传递的值是对象，那么编译文件也会自动相应的对应输出方式
+
+```php
+        $obj = new \stdClass();
+        $obj->username = '辉夜';
+        $obj->email    = 'huiye@163.com';
+        $this->assign('obj', $obj);
+        return $this->fetch('var');
+```
+
+模板调用：
+
+```php
+{$obj->username}.{$obj->email}
+```
+
+编译文件：
+
+```php
+<?php echo htmlentities($obj->username); ?>.<?php echo htmlentities($obj->email); ?>
+```
+
+如果对模型对象的数据列表，数组和对象方式均可
+
+### 2、其他输出
+
+1.如果输出的变量没有值，可以直接设置默认值代替
+
+```php
+{$user.name|default='没有用户名'}
+```
+
+2.使用$Think.xxx.yyy方式，可以输出系统的变量
+
+系统变量有：$_SERVER、$_ENV、$_GET、$_POST、$_REQUEST、$_SESSION 和$_COOKIE；
+
+```php
+{$Think.get.name}
+```
+
+3.除了变量，常量也可以在模板直接输出
+
+```php
+{$Think.const.PHP_VERSION} {$Think.PHP_VERSION}
+```
+
+4.系统配置也可以直接在模板输出，配置参数可以在config文件下
+
+```php
+{$Think.config.default_return_type}
+```
+
+## 模板中函数和运算符
+
+### 1、使用函数
+
+1.控制器端先赋值一个密码的变量，模板区设置md5加密操作
+
+```php
+$this->assign('password', '123456');
+```
+
+```php
+{$password|md5}
+```
+
+系统默认在编译时会采用htmlentities过滤函数防止XSS跨站脚步攻击
+
+如果想更换一个过滤函数，比如htmlspecialchars，可以在配置文件设置
+
+具体在config下的template.php中，增加一条如下配置即可
+
+```php
+'default_filter' => 'htmlspecialchars'
+```
+
+2.如果在某个字符，不需要进行HTML实体转义的话，可以单独使用raw处理
+
+```php
+<?php echo $user['email']; ?>
+```
+
+3.系统还提供了一些固定的过滤方法，如下
+
+| 函数    | 说明                               |
+| ------- | ---------------------------------- |
+| date    | 格式化时间{$time\|date='Y-m-d'}    |
+| format  | 格式化字符串{$number\|format='%x'} |
+| upper   | 转换为大写                         |
+| lower   | 转换为小写                         |
+| first   | 输出数组的第一个元素               |
+| last    | 输出数组的最后一个元素             |
+| default | 默认值                             |
+| raw     | 不使用转义                         |
+
+```php
+$this->assign('time', time());
+{$time|date='Y-m-d'}
+```
+
+```php
+$this->assign('number', '14');
+{$number|format='%x'}
+```
+
+如果函数中，需要多个参数调用，直接用逗号隔开即可
+
+```php
+{$password|substr=0,3}
+```
+
+在模板中也支持多个函数进行操作，用|号隔开即可，函数从左到右依次执行
+
+```php
+{$$password|md5|upper|substr=0,3}
+```
+
+也可以在模板中直接使用PHP的语法模式，该方法不会使用过滤转义
+
+```php
+{:substr(strtoupper(md5($$password)),0,3)}
+```
+
+### 2、运算符
+
+1.在模板中运算符有+、-、*、/、%、++、--等
+
+```php
+{$number+$number}
+```
+
+2.如果在模板中运算符，则函数方法则不再支持
+
+```php
+{$number+$number|default='没有值'}
+```
+
+3.模板也可以实现三元运算，包括其它写法
+
+```php
+{$name ? '正确' : '错误'} //$name 为 true 返回正确，否则返回错误 
+{$name ?= '真'} //$name 为 true 返回真 
+{$Think.get.name ?? '不存在'} //??用于系统变量，没有值时输出 
+{$name ?: '不存在'} //?:用于普通变量，没有值时输出
+```
+
+4.三元运算符也支持运算返回布尔值判断
+
+```php
+{$a == $b ? '真':'假'}
+```
 
