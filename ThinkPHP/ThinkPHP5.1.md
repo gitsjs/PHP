@@ -2750,3 +2750,141 @@ $this->assign('number', '14');
 {$a == $b ? '真':'假'}
 ```
 
+# 模板的循坏标签
+
+### 1、foreach循坏
+
+1.控制器端先通过模型把相应的数据列表给筛选出来
+
+```php
+    public function loop()
+    {
+        $list = UserModel::all();
+        $this->assign('list', $list);
+        return $this->fetch('user');
+    }
+```
+
+2.在模板端使用对称的标签{foreach}...{/foreach}实现循坏
+
+```php
+    {foreach $list as $key=>$obj}
+    {$key}.{$obj.id}.{$obj.username}({$obj.gender}).{$obj.email}<br>
+    {/foreach}
+```
+
+其中$list是控制器端传递的数据集，$key是Index索引，$obj是数据对象
+
+也可以在模板中直接执行模型数据调用，而不在控制器设置
+
+```php
+    {foreach :model('user')->all() as $key=>$obj}
+    {$key}.{$obj.id}.{$obj.username}({$obj.gender}).{$obj.email}<br>
+    {/foreach}
+```
+
+### 2、volist循坏
+
+1.volist也是将查询得到的数据集通过循坏的方式进行输出
+
+```php
+    {volist name='list' id='obj'}
+    {$key}.{$obj.id}.{$obj.username}({$obj.gender}).{$obj.email}<br>
+    {/volist}
+```
+
+volist中的name属性表示数据总集，id属性表示当前循坏的数据单条集
+
+volist也可以直接使用模型对象获取数据集的方式进行循坏输出
+
+```php
+    {volist name='list' id='obj'}
+    {$key}.{$obj.id}.{$obj.username}({$obj.gender}).{$obj.email}<br>
+    {/volist}
+```
+
+2.使用offset属性和length属性从第4条开始显示5条，这里的下标从0开始
+
+```php
+    {volist name='list' id='obj' offset='3' length='5'}
+    {$key}.{$obj.id}.{$obj.username}({$obj.gender}).{$obj.email}<br>
+    {/volist}
+```
+
+3.可以使用eq标签来实现奇数或偶数来筛选数据
+
+```php
+    {volist name='list' id='obj' mod='2'}
+    {eq name='mod' value='0'}
+    {$key}.{$obj.id}.{$obj.username}({$obj.gender}).{$obj.email}<br>
+    {/eq}
+    {/volist}
+```
+
+通过编译文件可以理解，mod=2表示索引除以2得到的余数是否等于0或1
+
+如果余数设置为0，那么输出的即偶数，如果设置为1，则输出的是奇数
+
+4.使用empty属性，可以当没有任何数据的时候，实现输出指定的提示
+
+```php
+    {volist name=':model("user")->where("id",1000)->all()' id='obj' empty='没有任何数据'}
+    {$key}.{$obj.id}.{$obj.username}({$obj.gender}).{$obj.email}<br>
+    {/volist}
+```
+
+empty属性，可以是控制器端传递过来的变量，比如:empty='$empty';
+
+5.使用key='k'，让索引从1开始计算，不指定就用{$i}，指定后失效
+
+```php
+    {volist name='list' id='obj' key='k'}
+    {$k}.{$key}.{$obj.id}.{$obj.username}({$obj.gender}).{$obj.email}<br>
+    {/volist}
+```
+
+### 3、for循坏
+
+1.for循坏，通过起始和终止值，结合步长实现循环
+
+```php
+{for start='1' end='100' comparison='<' step='2' name='i' } {$i} {/for} <br>
+```
+
+## 模板的比较和定义标签
+
+### 1、比较标签
+
+1.{eq}..{/eq}标签，比较两个值是否相同，相同输出包含内容
+
+```php
+    public function compare(){
+        $this->assign('username','Mr.lee');
+        return $this->fetch('compare');
+    }
+```
+
+```php
+    {eq name='username' value='Mr.lee'}
+    李先生
+    {/eq}
+```
+
+属性name里是一个变量，$符号可加可不加；而value里的是一个字符串
+
+如果value也需要一个变量的话，那么value需要加上$后的变量
+
+```php
+        $username = 'Mr.lee';
+        $this->assign('username',$username);
+```
+
+```php
+    {eq name='username' value='$username'}
+    李小姐
+    {/eq}
+```
+
+
+
+### 2、定义标签
