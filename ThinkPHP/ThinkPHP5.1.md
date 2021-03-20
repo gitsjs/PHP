@@ -5481,3 +5481,1373 @@ $request->name = 'Mr.lee';
         return \think\facade\Request::param('name');
     }
 ```
+
+## 异常处理
+
+### 1、异常处理
+
+1.系统输出的异常信息比PHP原生的要人性化，但需要开启调试模式
+
+如果想更改异常页面的样式、布局之类，可以修改这个页面
+
+```
+thinkphp/tpl/think_exception.tpl
+```
+
+2.如果想要直接替换掉异常页面，可以再app.php中进行设置
+
+```php
+// 异常页面的模板文件
+    'exception_tmpl'         => Env::get('think_path') . 'tpl/think_exception.tpl',
+```
+
+默认情况下，对所有的错误都会抛出异常信息，可以用错误级别关闭‘
+
+```php
+error_reporting(0)
+```
+
+3.系统的异常抛出是自动进行的，并不需要你手动抛出，但也支持手动
+
+```php
+        throw new Exception("异常信息", 1);
+```
+
+4.可以使用try..catch对可能发生的 异常进行手动捕获或抛出
+
+```php
+        try {
+            echo 0 / 0;
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
+```
+
+5.可以抛出HTTP异常，所谓HTTP异常比如404错误，500错误之类
+
+```php
+throw new HttpException(404,'页面不存在');
+```
+
+系统提供了一个助手函数abort()方法简化HTTP异常抛出
+
+```php
+abort(404,'页面不存在');
+```
+
+如果系统关闭了调试模式，进入部署环境下，可以设置 HTTP 错误页面，比如 404 
+
+```php
+    'http_exception_template' => [
+        // 定义404 错误的模板文件地址
+        404 => Env::get('app_path') . '404.html',
+    ]
+```
+
+## 日志处理
+
+### 1、日志处理
+
+1.日志处理的操作由Log类完成，它记录者所有程序中运行的错误记录
+
+在config目录下的log.php配置文件，用于设置日志信息
+
+在runtime目录下后一个log文件夹，里面按照日期排好了每月的日志
+
+2.使用record()方法，记录一条测试日志
+
+```php
+<?php
+namespace app\index\controller;
+
+use think\facade\Log;
+class Record
+{
+    public function index()
+    {
+        Log::record('测试日志！');
+    }
+}
+```
+
+在log日志文件夹里找到最新生成的日志，可以看到生成的日志信息
+
+系统提供了不同日志级别，默认info级别，从低到高排列如下：
+
+ **debug/info/notice/warning/error/critical/alert/emergency**
+
+一般记录就是info信息，也可以指定信息级别
+
+```php
+        Log::record('测试日志!','error');
+```
+
+3.系统还提供了关闭写入的功能，在配置文件中关闭，或者使用::close()方法
+
+```php
+Log::close()
+'close'=> false
+```
+
+4.系统发生异常后，会自动写入error日志，如果你想手动也可以
+
+```php
+        try {
+            echo 0 / 0;
+        } catch (Exception $e) {
+            echo $e->getMessage();
+            Log::record('被除数不得为零','error');
+        }
+```
+
+5.对于各种日志级别，系统还提供了一些快捷方式和助手函数，比如：
+
+```php
+Log::error('错误日志！'); //Log::record('错误日志！', 'error')
+Log::info('信息日志！'); //Log::record('信息日志！', 'info')
+trace('错误日志！', 'error');
+trace('信息日志！', 'info')
+```
+
+如果开启了的是调试模式，那每次加载都会写入内存的运行数据，关闭就不写入
+
+系统默认并不记录HTTP异常，因为这种异常容易遭受攻击不断写入日志
+
+6.在配置文件log.php中，可以设置路径，来更改日志文件的存储位置
+
+```php
+Env::get('app_path') .'../runtime/logs/',
+```
+
+在配置文件log.php中，可以设置限定日志文件的级别，不属于的无法写入
+
+```php
+'level' => ['info'],
+```
+
+在配置文件log.php中，添加转换为json格式
+
+```php
+'json' => true
+```
+
+使用::getlog()方法，可以获取写入到内存中的日志
+
+```php
+        $log = Log::getLog();
+        dump($log);
+```
+
+使用::clear()方法，可以清除掉内存中的日志
+
+```php
+        Log::clear();
+```
+
+在配置文件log.php中，设置max_files最大文件数量，会按日期文件存储，一旦超过指定的数量，早期的会被清理掉
+
+```php
+'max_files' => 2,
+```
+
+## 验证器
+
+### 1、验证器的定义
+
+1.验证器的使用，必须先定义它，系统提供了一天命令直接生成想要的类
+
+```php
+php think make:validate User
+```
+
+这条命令会自动在应用目录下common文件夹里生成一个validate文件夹，并生成User.php
+
+```php
+<?php
+namespace app\common\validate;
+
+use think\Validate;
+
+class User extends Validate
+{
+    /**
+     * 定义验证规则
+     * 格式：'字段名'	=>	['规则1','规则2'...]
+     *
+     * @var array
+     */	
+	protected $rule = [];
+    
+    /**
+     * 定义错误信息
+     * 格式：'字段名.规则名'	=>	'错误信息'
+     *
+     * @var array
+     */	
+    protected $message = [];
+}
+```
+
+2.自动生成两个属性：$rule表示定义规则，$message表示错误提示信息
+
+```php
+	protected $rule = [
+        'name'  =>  'require|max:20',
+        'price' =>  'number|between:1,100',
+        'email' =>  'email'
+    ];
+    
+        protected $message = [
+        'name.require'  =>  '姓名不能为空',
+        'name.max'      =>  '姓名不得大于20位',
+        'price.number'  =>  '价格必须是数字',
+        'price.between' =>  '价格必须1-100之间',
+        'email'         =>  '邮箱的格式错误'
+    ];
+```
+
+如果不$message定义的话，将提示默认的错误信息
+
+验证器定义好之后，需要进行调用测试，创建一个Verify.php控制器
+
+```php
+<?php
+namespace app\index\controller;
+
+use app\common\validate\User;
+
+class Verify
+{
+    public function index()
+    {
+        $data = [
+            'name'  =>  '蜡笔小新',
+            'price' =>  90,
+            'email' =>  'xiaoxin@163.com'
+        ];
+
+        $validate = new User();
+
+        if (!$validate->check($data)) {
+            dump($validate->getError());
+        }
+    }
+}
+```
+
+3.控制器还提供了一个更加方便验证的方法，可以更容易的进行编码
+
+```php
+<?php
+namespace app\index\controller;
+
+use think\Controller;
+
+class Verify extends Controller
+{
+    public function index()
+    {
+        $result = $this->validate([
+            'name'  =>  '蜡笔小新',
+            'price' =>  90,
+            'email' =>  'xiaoxin@163.com'
+        ],'\app\common\validate\User');
+
+        if ($result !== true) {
+            dump($result);
+        }
+    }
+}
+```
+
+4.默认情况下，一旦有数据验证不符合规则，就立即停止验证进行返回，如果要验证所有的错误信息，需要手动开启批量验证
+
+```php
+protected $batchValidate =true;
+```
+
+默认情况下，验证失败后不会抛出异常，需要手动设置下：
+
+```php
+protected $failException =true;
+```
+
+5.系统还提供了常用的规则让开发者直接使用，也可以自行定义独有的特殊规则
+
+```php
+	protected $rule = [
+        'name'  =>  'require|max:20|checkName:小明',
+        'price' =>  'number|between:1,100',
+        'email' =>  'email'
+    ];
+```
+
+```php
+    // 自定义规则，名称不能是小明
+    protected function checkName($value,$rule)
+    {
+        return $rule != $value?true:'名称不能是小明';
+    }
+```
+
+对于自定义规则中，一共可以有五个参数
+
+```php
+    protected function checkName($value,$rule,$data,$filed,$title)
+    {
+        dump($data);
+        dump($filed);
+        dump($title);
+    }
+```
+
+设置字段描述，只要在字段名用|后设置即可
+
+```php
+        'name|用户名'  =>  'require|max:20|checkName:小明',
+```
+
+## 验证规则和错误信息
+
+### 1、验证规则
+
+1.验证器定义也支持数组形式
+
+```php
+    protected $rule = [
+        'name'  =>  [
+            'require',
+            'max'       =>  10,
+            'checkName' =>  '小明'
+        ],
+        'price' =>  [
+            'number',
+            'between'   =>  '1,100'
+        ],
+        'email' =>  'email'
+    ];
+```
+
+数组模式在验证规则很多很乱情况下，更容易管理，可读性更高
+
+2.如果想使用独立验证，就是手动调用验证类，而不是调用User.php验证类
+
+这种验证方式，一般来说，就是独立、唯一，并不共享的调用方式
+
+```php
+        $validate = new Validate();
+        // $validate->rule('name','require|max:10');
+        $validate->rule([
+            'name|用户名'    =>  'require|max:10',
+            'price'         =>  'number|between:1,100',
+            'email'         =>  'email'
+        ]);
+```
+
+独立验证默认也是返回一条错误信息，如果要批量返回所有错误使用batch()
+
+```php
+$validate->batch()->check($data)
+```
+
+3.独立验证支持对象化的定义方式，但不支持在属性方式的定义
+
+```php
+        $validate = new Validate();
+        // $validate->rule('name',ValidateRule::isRequire()->max(10));
+        $validate->rule([
+            'name'  =>  ValidateRule::isRequire()->max(10),
+            'price' =>  ValidateRule::isNumber()->between('1,100'),
+            'email' =>  ValidateRule::isEmail(),
+        ]);
+        if (!$validate->batch()->check($data)) {
+            dump($validate->getError());
+        }
+```
+
+4.独立支持闭包的自定义方式，但不支持属性方式和多规则方式
+
+```php
+        $validate = new Validate();
+        $validate->rule([
+            'name'  =>  function($value,$data){
+                return $value != ''?true:'姓名不得为空';
+            },
+            'price' =>  function($value){
+                return $value > 0?true:'价格不等小于零';
+            }
+        ]);
+        if (!$validate->batch()->check($data)) {
+            dump($validate->getError());
+        }
+```
+
+### 2、错误信息
+
+1.可以在属性定义错误信息，如果不定义使用默认错误信息
+
+如果使用默认错误信息，将字段设置描述信息，提示也会使用描述的信息
+
+```php
+protected $rule = [
+	'name|姓名' => 'require|max:10',
+];
+```
+
+如果控制器使用独立验证规则，也可以在控制器设置错误信息
+
+```php
+$validate->message([
+	'name.require' => '姓名不可以是空的呢',
+	'name.max' => '姓名太长可不好',
+]);
+```
+
+也可以直接把错误信息写入到语言包里，进行调用，语言包：lang/zh-cn.php
+
+```php
+'name.require' => 'name_require' //控制器设置
+'name_require' => 'name不得为空' //语言包设置
+```
+
+## 验证场景和路由验证
+
+### 1、验证场景
+
+1.有时，不希望所有的字段都得到验证，比如修改更新时不验证邮箱
+
+可以在验证类User.php中，设置一个$scene属性，用来限定场景验证
+
+```php
+    // 场景验证设置
+    protected $scene = [
+        'insert' => ['name','price','email'],
+        'edit'   => ['name','price']
+    ];
+```
+
+insert新增需要验证三个字段，而edit更新则只要验证两个字段
+
+在控制器端，验证时，根据不同的验证手段，绑定验证场景有下面两种方式
+
+```php
+$validate->scene('edit')->batch()->check($data)
+```
+
+```php
+\app\common\validate\User.edit
+```
+
+2.在验证类端，可以设置一个公共方法对场景的细节进行定义
+
+```php
+    // 公共方法的场景验证
+    public function sceneEdit()
+    {
+        $edit = $this->only(['name','price'])			//仅对两个字段验证
+            		 ->remove('name','max|checkName')	//移出掉最大字段的限制 
+            		 ->append('name','number');			//增加一个不能为空的限制 
+        return $edit;
+    }
+```
+
+注意：不要对一个字段进行来两个或以上的移出和添加，会被覆盖
+
+```php
+remove('name','xxx|yyy|zzz')或者remove('name',['xxx','yyy','zzz']);
+而不是
+remove('name','xxx')->remove('name','yyy')->remove('name','zzz');
+```
+
+### 1、路由验证
+
+1.路由验证，即在路由的参数来调用验证类进行验证，和字段验证一样
+
+```php
+protected $rule = [
+	'id' => 'number|between:1,10'
+];
+protected $message = [
+    'id.between' => 'id 只能是1-10 之间',
+    'id.number' => 'id 必须是数字' 
+];
+```
+
+```php
+Route::rule('read/:id','Verify/read') ->validate(\app\validate\User::class, 'eidt');
+```
+
+2.如果不使用验证器类，也可以使用独立的验证方式，也可以使用对象化
+
+```php
+Route::get('read/:id','Verify/read')->validate([
+    'id' => 'number|between:1,10',
+    'email' => \think\validate\ValidateRule::isEmail()
+    ],'edit',[
+        'id.between' => 'id限定在1-10之间',
+        'email'      => '邮箱格式错误'
+    ],true);
+```
+
+## 验证静态调用和令牌
+
+### 1、静态调用
+
+1.静态调用，即使用facade模式进行调用验证，适合单个数据的验证
+
+2.引入facade中的Validate时，和think\Validate冲突，只需引入一个即可
+
+```php
+        // 验证邮箱是否合法
+        dump(Validate::isEmail('abc@163.com'));
+		// 验证是否为空
+		dump(Validate::isRequre(''));
+		// 验证是否为数值
+		dump(Validate::isNumber(10))
+```
+
+静态调用返回的结果是false和true
+
+3.静态调用，也是支持多规则验证的，使用checkRule()方法实现
+
+```php
+        // 验证数值合法性
+        dump(Validate::checkRule(10,'number|between:1,10'));
+```
+
+checkRule()不支持错误信息，需要自己实现，但支持对象化规则定义
+
+```php
+dump(Validate::checkRule(10,ValidateRule::isNumber()->between('1,10')));
+```
+
+### 2、表单令牌
+
+1.表单令牌就是在表单中增加一个隐藏字段，随机生成一串字符，确定不是伪造
+
+这种堆积产生的字符和服务器的session进行对比，通过则合法表单
+
+2.首先，创建一个带有令牌的表单，在See控制器下的vali方法模板实现.
+
+```php
+    <form action="../../index/Verify/check" method="post">
+        <input type="text" name="user">
+        <input type="hidden" name="__token__" value="{$Request.token}">
+        <input type="submit" value="提交">
+    </form>
+```
+
+为了验证系统内部的机制，可以通过打印测试出内部的构造
+
+```php
+    public function vali()
+    {
+        // 打印生成的token随机数
+        echo Request::token();
+        echo '<br />';
+        // 打印出保存到session的token
+        echo Session::get('__token__');
+        return $this->fetch('vali');
+    }
+```
+
+验证器部分，只要使用内置规则token即可验证，具体流程如下：
+
+```php
+    public function check()
+    {
+        $data = [
+            'user' =>   input('post.user'),
+            '__token__' => input('post.__token__')
+        ];
+        $validate = new \think\Validate();
+        $validate -> rule([
+            'user' =>  'require|token',
+        ]);
+
+        if (!$validate->batch()->check($data)) {
+            dump($validate->getError());
+        }
+    }
+}
+```
+
+## 独立验证和内置规则
+
+### 1、独立验证
+
+系统提供了make方法实习那独立验证，在TP6已经废弃
+
+```php
+$data = [
+	'name' => '',
+	'email' => 'abc163.com'
+];
+$validate = Validate::make([
+	'name' => 'require|max:25',
+	'email' => 'email'
+]);
+
+if (!$validate->batch()->check($data)) {
+	dump($validate->getError());
+}
+```
+
+### 2、内置规则
+
+1.内置规则验证区分大小写
+
+静态方法支持两种形式，比如::number()或者isNumber()均可，而require是PHP保留字，那么就必须用isRequest()或must()
+
+```php
+    public function make()
+    {
+        dump(Validate::number(-10));
+        dump(Validate::number(10));
+        dump(Validate::chs('蜡笔小新'));
+        dump(Validate::activeUrl('www.baidu.com'));
+        dump(Validate::url('http://www.baidu.com'));
+        dump(Validate::ip('127.0.0.1'));
+        dump(Validate::dateFormat('20-1-1','y-m-d'));
+        dump(Validate::eq('100',100));
+        dump(Validate::regex('123456','\d{6}'));
+        dump(Validate::file(Request::file('image')));
+        dump(Validate::image(Request::file('image'),'150,150,gif'));
+        dump(Validate::fileExt(Request::file('image'),'jpg,png,gif'));
+    }
+```
+
+2.格式验证类 
+
+```php
+'field' => 'require', //不得为空::isRequire或::must 
+'field' => 'number', //是否是纯数字，非负数非小数点 
+'field' => 'integer', //是否是整数 
+'field' => 'float', //是否是浮点数 
+'field' => 'boolean', //是否是布尔值，或者bool 
+'field' => 'email', //是否是email 
+'field' => 'array', //是否是数组 
+'field' => 'accepted', //是否是“yes”“no”“1”这三个值 
+'field' => 'date', //是否是有效日期 
+'field' => 'alpha', //是否是纯字母 
+'field' => 'alphaNum', //是否是字母和数字 
+'field' => 'alphaDash', //是否是字母和数字以及_-(下划线和破折号) 
+'field' => 'chs', //是否是纯汉字
+'field' => 'chsAlpha', //是否是汉字字母 
+'field' => 'chsAlphaNum', //是否是汉字字母数字 
+'field' => 'chsDash', //是否是汉字字母数字以及_-(下划线和破折号) 
+'field' => 'cntrl', //是否是控制字符(换行、缩进、空格) 
+'field' => 'graph', //是否是可打印字符(空格除外) 
+'field' => 'print', //是否是可打印字符(包含空格) 
+'field' => 'lower', //是否是小写字符 
+'field' => 'upper', //是否是大写字符 
+'field' => 'space', //是否是空白字符 
+'field' => 'xdigit', //是否是十六进制 
+'field' => 'activeUrl', //是否是有效域名或IP地址 
+'field' => 'url', //是否是有效URL 地址 
+'field' => 'ip', //是否是有效IP(支持ipv4,ipv6) 
+'field' => 'dateFormat:Y-m-d', //是否是指定日期格式 
+'field' => 'mobile', //是否是有效手机 
+'field' => 'idCard', //是否是有效身份证 
+'field' => 'macAddr', //是否是有效MAC 地址 
+'field' => 'zip', //是否是有效邮
+```
+
+3.长度和区间验证类
+
+```php
+'field' => 'in:1,2,3', //是否是有某个值 
+'field' => 'notIn:1,2,3', //是否是没有某个值 
+'field' => 'between:1,100', //是否是在区间中 
+'field' => 'notBetween:1,100', //是否是不在区间中 
+'field' => 'length:2,20', //是否字符长度在范围中 
+'field' => 'length:4', //是否字符长度匹配 
+'field' => 'max:20', //是否字符最大长度 
+'field' => 'min:5', //是否字符最小长度 
+//length、max、min 也可以判断数组长度和File文件大小
+'field' => 'after:2020-1-1', //是否在指定日期之后 
+'field' => 'before:2020-1-1', //是否在指定日期之前
+
+//是否在当前操作是否在某个有效期内 
+'field' => 'expire:2019-1-1,2020-1-1', 
+//验证当前请求的IP是否在某个范围之间， 
+'field' => 'allowIp:221.221.78.1, 192.168.0.1', 
+//验证当前请求的IP是否被禁用 
+'field' => 'denyIp:221.221.78.1, 127.0.0.1',
+```
+
+4.字段比较类
+
+```php
+'field' => 'confirm:password', //是否和另一个字段匹配 
+'field' => 'differnet:password',//是否和另一个字段不匹配 
+'field' => 'eq:100', //是否等于某个值，=、same 均可 
+'field' => 'gt:100', //是否大于某个值，支持>
+'field' => 'egt:100', //是否大于等于某个值，支持>= 
+'field' => 'lt:100', //是否小于某个值，支持< 
+'field' => 'elt:100', //是否小于等于某个值，支持<= 
+//比较方式也支持字段比较，比如：'field'=>'lt:price'
+```
+
+5.其他验证类
+
+```php
+'field' => '\d{6}', //正则表达式验证 
+'field' => 'regex:\d{6}', //正则表达式验证 
+'field' => 'file', //判断是否是上传文件 
+'field' => 'image:150,150,gif', //判断图片(参数可选) 
+'field' => 'fileExt:jpg,txt', //判断文件允许的后缀 
+'field' => 'fileMime:text/html',//判断文件允许的文件类型 
+'field' => 'fileSize:2048', //判断文件允许的字节大小
+'field' => 'behavior:\app\...', //判断行为验证 
+'field' => 'unique:user', //验证field字段的值是否在user表 
+'field' => 'requireWith:account'//当account 有值时,requireWidth 必须
+```
+
+## Session
+
+### 1、Session
+
+1.Session第一次调用时，会按照cofig/session.php进行初始化
+
+```php
+return [
+    'id'             => '',
+    // SESSION_ID的提交变量,解决flash上传跨域
+    'var_session_id' => '',
+    // SESSION 前缀
+    'prefix'         => 'think',
+    // 驱动方式 支持redis memcache memcached
+    'type'           => '',
+    // 是否自动开启 SESSION
+    'auto_start'     => true,
+];
+```
+
+从配置内容可以了解到，名称前缀定义了think，并且自动开启 
+
+2.Session是服务器的内容存储，而相对的客户端的是Cookie
+
+3.系统也支持通过调用的形式进行初始化，比如::init()方法
+
+```php
+        Session::init([
+            'prefix' => 'tp',
+            'auto_start' => true
+        ]);
+```
+
+**设置参数**
+
+默认支持的session设置参数包括：
+
+| 参数           | 描述                  |
+| :------------- | :-------------------- |
+| type           | session类型           |
+| expire         | session过期时间       |
+| prefix         | session前缀           |
+| auto_start     | 是否自动开启          |
+| use_trans_sid  | 是否使用use_trans_sid |
+| var_session_id | 请求session_id变量名  |
+| id             | session_id            |
+| name           | session_name          |
+| path           | session保存路径       |
+| domain         | session cookie_domain |
+| use_cookies    | 是否使用cookie        |
+| cache_limiter  | session_cache_limiter |
+| cache_expire   | session_cache_expire  |
+| secure         | 安全选项              |
+| httponly       | 使用httponly          |
+
+> 如果做了session驱动扩展，可能有些参数不一定有效。
+
+4.直接使用::set()和::get()方法去设置Session的存取
+
+```php
+Session::set('uesr','Mr.lee');
+echo Session::get('user');
+dump(Request::session());
+echo $_SESSION['think']['user];
+```
+
+5.::set()赋值种，第三个参数可以设置前缀，即Session作用域
+
+```php
+Session::set('user','Mr.Lee','tp');
+```
+
+6.::get()取值时，第二个参数可强调作用域，不写则默认当前作用域
+
+```php
+Session::get('user','tp')；
+```
+
+7.::has()判断当前作用域session是否赋值，第二参数可以指定作用域
+
+```php
+Session::has('user');
+Session::has('user','tp');
+```
+
+8.::delete()删除，默认删除当前作用域的值，第二参数可以指定作用域
+
+```php
+Session::delete('user');
+Sesiion::delete('usesr','tp');
+```
+
+9.::prefix()方法，可以指定当前作用域
+
+```php
+Session::prefix('tp');
+```
+
+10.::pull()方法，取出当前的值，并删除掉这个session，不存在返回null
+
+```php
+echo Session::pull('user');
+```
+
+11.::clear()方法，清除当前作用域的session，可指定作用域
+
+```php
+Session::clear();
+Session::clear('think');
+```
+
+12.::flash()方法，设置闪存数据，只请求依次有效的情况，在请求会失效
+
+```php
+Session::flash('user','Mr.lee');
+```
+
+13.::flush()方法，可以清理闪存数据的有效session
+
+```php
+Session::flush();
+```
+
+### 2、二维和助手函数
+
+1.二维操作，就是对象和数组的调用方式
+
+```php
+//赋值(当前作用域)
+Session::set('obj.user','Mr.lee');
+//判断(当前作用域)是否赋值
+Session::has('obj.user');
+//取值(当前作用域)
+Session::get('obj.user');
+//删除(当前作用域)
+Session::delete('obj.user');
+```
+
+2.助手函数，更加方便操作
+
+```php
+//赋值
+session('user','Mr.wang');
+//带作用域赋值
+session('user','Mr.lee','tp');
+//has判断
+session('?user');
+//delete删除
+session('user',null);
+//清理
+session(null);
+//带作用域清理
+session(null,'tp');
+//带作用域输出
+echo session('user','','tp');
+//输出
+echo session('user');
+```
+
+## Cookie
+
+### 1、Cookie
+
+1.Cookie是客户端存储，无须手动初始化，配置文件cookie.php种会自行初始化
+
+```php
+return [
+    // cookie 名称前缀
+    'prefix'    => '',
+    // cookie 保存时间
+    'expire'    => 0,
+    // cookie 保存路径
+    'path'      => '/',
+    // cookie 有效域名
+    'domain'    => '',
+    //  cookie 启用安全传输
+    'secure'    => false,
+    // httponly设置
+    'httponly'  => '',
+    // 是否使用 setcookie
+    'setcookie' => true,
+];
+```
+
+2.也可以手动初始化，也可以单独设置cookie前缀
+
+```php
+Cookie::init([
+	'prefix'	=>	'think_',
+	'expire'	=>	3600,
+	'path'		=>	'/'
+]);
+
+Cookie::prefix('tp_');
+```
+
+3.::set()方法，创建一个最基本的cookie，可以设置前缀、过期时间、数组等
+
+```php
+        Cookie::set('name','Mr.lee');
+        Cookie::set('user',[1,2,3]);
+        Cookie::set('user','Mr.lee',3600);
+        Cookie::set('user2','Mr.wang',[
+            'expire' => 3600,
+            'prefix' => 'think_'
+        ]);
+```
+
+4.::forever()方法，永久保存Cookie(保存十年时间)
+
+```php
+Cookie::forever('user','Mr.zhang');
+```
+
+5.::has()方法，判断是否赋值，第二参数可设置前缀
+
+```php
+Cookie::has('user');
+Cookie::has('user','think_');
+```
+
+6.::get()取值时，第二设置前缀
+
+```php
+        Cookie::get('user');
+        Cookie::get('user2','think_');
+```
+
+7.::delete()删除，第二参数可以设置前缀
+
+```php
+        Cookie::delete('user');
+        Cookie::delete('user2','think_');
+```
+
+8.::clear()方法，清空Cookie，这里必须指定前缀，否则无法清空
+
+```php
+        Cookie::clear('tp_');
+```
+
+2、助手函数
+
+1.助手函数，更加方便操作
+
+```php
+//初始化
+cookie([
+	'prefix'	=>	'tp_',
+	'expire'	=>	3600
+]);
+
+//输出
+echo cookie('user');
+
+//设置
+cookie('user','Mr.lee',3600);
+
+//删除
+cookie('user',null);
+
+//清除
+cookie(null,'tp_');
+```
+
+## 多语言
+
+### 1、配置多语言
+
+1.如果要开启多语言切换功能，需要在app.php配置文件种开启
+
+```php
+// 是否开启多语言
+'lang_switch_on' => true,
+```
+
+2.默认应用目录会调用application\lang目录下语言包
+
+```php
+//错误信息，zh-cn.php 
+return
+	[ 'require_name' => '用户名不得为空！',
+	'email_error' => '邮箱地址不正确！',
+];
+//error message，en-us.php 
+return [
+	'require_name' => 'The user name cannot be empty!',
+	'email_error' => 'Incorrect email address!',
+];
+//エラーメッセージ， ja-jp.php 
+return [
+	'require_name' => 'ユーザ名は空ではいけません！',
+	'email_error' => 'メールアドレスが間違っています！',
+];
+```
+
+以上三个语言包，会根据条件自动加载，如果不在指定的目录则需要::load()
+
+```php
+Lang::load( '../application/common/lang/xx-xx.php');
+```
+
+系统默认会指定：zh-ch这个语言包，通过::get()来输出错误信息
+
+```php
+Lang::get('email_error');
+```
+
+3.通过URL方式来切换语言，?lang=en-us即可，也可以在公共文件设置cookie
+
+```php
+\think\facade\Cookie::prefix('think_');
+\think\facade\Cookie::set('var', 'en-us');
+```
+
+### 2、调用方式
+
+1.在模板种调用语言信息，可以用$Think.lang.xxx或{:lang('xxx')};
+
+助手函数:lang('email_error');
+
+可以在公共文件，设置语言包限定列表
+
+```php
+Lang::setAllowLangList(['zh-cn','en-us','ja-jp']);
+```
+
+当开启限定列表后，默认语言又可以设置了
+
+## 分页功能
+
+### 1、分页功能
+
+1.不管是数据库操作还是模型操作，都使用paginate()方法来实现
+
+```php
+// 查找user表所有数据，每页显示5条
+$list = Db::name('user')->paginate(5);
+return json($list);
+```
+
+2.通过生成的数据列表，可以得到分页的参数变量
+
+```
+total(总条数)
+per_page(每页条数)
+current_page(当前页码)
+last_page(最终页码)
+```
+
+3.创建一个静态模板页面，并使用{volist}标签遍历列表
+
+```php
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分页</title>
+</head>
+
+<body>
+    <table border="1">
+        <tr>
+            <th>编号</th>
+            <th>姓名</th>
+            <th>性别</th>
+            <th>邮箱</th>
+            <th>价格</th>
+        </tr>
+        {volist name="list" id="obj"}
+        <tr>
+            <td>{$obj.id}</td>
+            <td>{$obj.username}</td>
+            <td>{$obj.gender}</td>
+            <td>{$obj.email}</td>
+            <td>{$obj.price}</td>
+        </tr>
+        {/volist}
+    </table>
+
+    {$list|raw}
+    {//$page|raw}
+</body>
+
+</html>
+```
+
+4.分页功能还提供了一个固定方式，实现分页按钮，只需要设置相应的CSS即可
+
+```php
+{$list|raw}
+```
+
+```php
+<ul class="pagination">
+    <li><a href="?page=1">&laquo;</a></li>
+    <li><a href="?page=1">1</a></li>
+    <li class="active"><span>2</span></li>
+    <li class="disabled"><span>&raquo;</span></li>
+</ul>
+
+.pagination {
+	list-style: none;
+	margin: 0;
+	padding: 0; 
+} 
+
+.pagination li {
+	display: inline-block;
+	padding: 20px;
+}
+```
+
+5.单独赋值分页的模板变量
+
+```php
+		$page = $list->render();
+        $this->assign('page',$page);
+        {$page|raw}
+```
+
+6.单独获取到总记录数量
+
+```php
+$total = $lsit->total();
+```
+
+7.限定总记录数，限定总记录数只有10条
+
+```php
+ $list = Db::name('user')->paginate(5,10);
+```
+
+8.如果使用模型方式分页，则可以通过获取器修改字段值，而分页本身也可以
+
+```php
+        $list = Db::name('user')->paginate(5,10)->each(function ($item,$key){
+            $item['gender'] = '【'.$item['gender'].'】';
+            return $item;
+        });
+```
+
+9.可以设置分页的页码为简洁分页
+
+```php
+$list = Db::name('user')->paginate(5,true);
+```
+
+## 上传功能
+
+### 1、上传功能
+
+1.如果要实现上传功能，首先需要建立一个上传表单
+
+```php
+<form action="http://localhost/tp5.1/public/index/upload" method="post" enctype="multipart/form-data">
+	<input type="file" name="image">
+	<input type="submit" id="button" value="确定">
+</form>
+```
+
+2.创建一个控制器Upload.php，用于处理上传文件
+
+```php
+class Upload
+{
+    public function index()
+    {
+        // 获取表单上传的数据
+        $file = Request::file('image');
+        // 移动到应用目录uploads下
+        $info = $file->move('../application/uploads');
+        // 判断上传信息
+        if ($info) {
+            // 输出上传信息
+            echo $info->getExtension();
+            echo '<br>';
+            echo $info->getSaveName();
+            echo '<br>';
+            echo $info->getFilename();
+        } else {
+            // 输出错误信息
+            echo $file->getError();
+        }
+    }
+}
+```
+
+3.批量上传，使用image[]作为名称，并使用foeach()遍历上传
+
+```php
+<form action="http://localhost/tp5.1/public/index/upload/uploads" method="post" enctype="multipart/form-data">
+	<input type="file" name="image[]">
+	<input type="file" name="image[]">
+	<input type="file" name="image[]">
+	<input type="submit" id="button" value="确定">
+</form>
+```
+
+```php
+    public function uploads()
+    {
+        $files = Request::file('image');
+        foreach ($files as $file) {
+            $info = $file->move('../application/uploads');
+            if ($info) {
+                echo $info->getExtension();
+                echo '<br>';
+                echo $info->getSaveName();
+                echo '<br>';
+                echo $info->getFilename();
+            } else {
+                echo $file->getError();
+            }
+        }
+    }
+```
+
+4.上传文件，可以通过validate()方法进行验证，包括大小限定、后缀限定等
+
+```php
+        $info = $file->validate([
+            'size' =>   102400,
+            'ext'  =>   'jpg,gif,png',
+            // 'type' =>   'text/html'
+        ])->move('../application/uploads');
+```
+
+5.默认情况下，上传的文件是以日期和微秒生成的方式：date
+
+6.生成的规则还支持另外两种方式：md5和sha1
+
+```php
+$file->rule('md5')->move('../application/uploads');
+```
+
+也可以通过传递一个方法或函数来自定义命名，比如使用unqiid()
+
+```php
+$file->rule('uniqid');		//unqiud()产生一个微秒时间生成一个唯一的ID
+```
+
+7.在move()方法的第二个参数设置为空字符串，可以表示按原本的名称保存
+
+```php
+$file->move('../application/uploads','');
+```
+
+8.如果设置原本的名称上传，会导致上传同名的文件被新的覆盖
+
+那么也可以设置在同名的基础上，不去覆盖之前的文件
+
+```php
+$file->move('../application/uploads',true,false);
+```
+
+## 缓存功能
+
+### 1、缓存功能
+
+1.系统内置了很多类型的缓存，以File文本缓存为例
+
+在app.php中，配置文件cache.php进行缓存配置，可以用::init();
+
+```php
+return [
+    // 驱动方式
+    'type'   => 'File',
+    // 缓存保存目录
+    'path'   => '',
+    // 缓存前缀
+    'prefix' => '',
+    // 缓存有效期 0表示永久缓存
+    'expire' => 0,
+];
+```
+
+2.::set()方法，可以设置一个缓存，然后再runtime/cache查看生成结果
+
+```php
+Cache::set('user','Mr.lee');
+```
+
+3.::inc()和::dec()实现缓存数据的自增和自减操作
+
+```php
+Cache::inc('num');
+Cache::inc('num',3);
+
+Cache::dec('num');
+Cache::dec('num',3);
+```
+
+4.::has()方法，判断缓存是否存在，返回布尔值
+
+```php
+Cache::has('user');
+```
+
+5.::get()方法，从缓存中获取到相应的数据，无数据返回null
+
+```php
+Cache::get('user');
+```
+
+6.::delete()方法，可以删除指定的缓存文件
+
+```php
+Cache::rm('user');
+```
+
+7.::pull()方法，先获取缓存值，然后再删除掉这个缓存，无数据返回null
+
+```php
+Cache::pull('user');
+```
+
+8.::clear()方法，可以清除所有的缓存
+
+```php
+Cache::clear();
+```
+
+9.::tag()标签，可以将多个缓存归类到标签中，方便统一管理，比如清除
+
+```php
+Cache::tag('tag')->set('user','Mr.lee');
+Cache::tag('tag')->set('age',20);
+
+Cache::set('user','Mr.lee');
+Cache::set('age',20);
+Cache::tag('tag',['user','gae']);
+
+Cache::clear('tag');
+```
+
+10.助手函数的使用:cache()
+
+```php
+        cache('user','Mr.lee');
+        echo cache('user');
+        cache('user',null);
+```
+
