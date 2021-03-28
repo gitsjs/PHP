@@ -6851,3 +6851,782 @@ Cache::clear('tag');
         cache('user',null);
 ```
 
+## 验证码功能
+
+### 1、验证码功能
+
+1.验证码功能不是系统内置的功能，需要通过composer引入进来
+
+```php
+composer require topthink/think-captcha=2.0.*
+```
+
+2.引入进来后，在模板中验证一下验证码是否能正常显示
+
+```php
+    <div>{:captcha_img()}</div>
+    <div><img src="{:captcha_src()}" alt="captcha"></div>
+```
+
+创建一个模板页面，设置一个验证码和文本框提交比对
+
+```php
+    <form action="../code/" method="POST">
+        <input type="text" name="code">
+        <input type="submit" value="验证">
+    </form>
+```
+
+创建Code控制器，用于接收表单的值，然后采用validate验证验证码
+
+```php
+<?php
+namespace app\index\controller;
+
+use think\captcha\Captcha;
+use think\Controller;
+use think\facade\Request;
+
+class Code extends Controller
+{
+    public function index()
+    {
+        $data = [
+            'code' => Request::post('code')
+        ];
+
+        $flag = $this->validate($data,[
+            'code|验证码' => 'require|captcha'
+        ]);
+        dump($flag);
+    }
+}
+```
+
+第二种方法可以通过对象的方式来实现，使用Captcha类
+
+```php
+    public function show()
+    {
+        $captcha = new Captcha();
+
+        return $captcha->entry();
+    }
+```
+
+```php
+        <div><img src="../code/show" alt="captcha"></div>
+        <form action="../code/check" method="POST">
+```
+
+3.如果一个页面生成了多个验证码，那需要通过id设置表示来确认
+
+```php
+return $captche->entry(1);
+$captcha->check(Request::post('code'),1)
+```
+
+还有一个独立的验证码检测函数来验证是否匹配
+
+```php
+captche_check(Request::post('code'),1)
+```
+
+4.验证码的配置参数
+
+`Captcha`类带有默认的配置参数，支持自定义配置。这些参数包括：
+
+| 参数     | 描述                              | 默认            |
+| :------- | :-------------------------------- | :-------------- |
+| codeSet  | 验证码字符集合                    | 略              |
+| expire   | 验证码过期时间（s）               | 1800            |
+| useZh    | 使用中文验证码                    | false           |
+| zhSet    | 中文验证码字符串                  | 略              |
+| useImgBg | 使用背景图片                      | false           |
+| fontSize | 验证码字体大小(px)                | 25              |
+| useCurve | 是否画混淆曲线                    | true            |
+| useNoise | 是否添加杂点                      | true            |
+| imageH   | 验证码图片高度，设置为0为自动计算 | 0               |
+| imageW   | 验证码图片宽度，设置为0为自动计算 | 0               |
+| length   | 验证码位数                        | 5               |
+| fontttf  | 验证码字体，不设置是随机获取      | 空              |
+| bg       | 背景颜色                          | [243, 251, 254] |
+| reset    | 验证成功后是否重置                | true            |
+
+> 如果使用扩展内置的方法进行验证码显示，直接在应用的`config`目录下面的`captcha.php`文件（没有则首先创建）中进行设置即可，以下设置方式仅限于独立调用Captcha类的时候使用。
+
+可以通过创建对象的方式来传入配置参数
+
+```php
+$config =    [
+    // 验证码字体大小
+    'fontSize'    =>    30,    
+    // 验证码位数
+    'length'      =>    3,   
+    // 关闭验证码杂点
+    'useNoise'    =>    false, 
+];
+$captcha = new Captcha($config);
+return $captcha->entry();
+```
+
+也可以采用动态阿凡你是设置
+
+```php
+$captcha = new Captcha();
+$captcha->fontSize = 30;
+$captcha->length   = 3;
+$captcha->useNoise = false;
+return $captcha->entry();
+```
+
+如果没有采用创建对象的方式，那么可以采用在config创建captcha.php
+
+```php
+$retrun =    [
+    // 验证码字体大小
+    'fontSize'    =>    30,    
+    // 验证码位数
+    'length'      =>    3,   
+    // 关闭验证码杂点
+    'useNoise'    =>    false, 
+];
+```
+
+在下载的验证码语言包里:vendor/topthink/..下，有.ttf字体
+
+```php
+//字体选择
+'fontttf' => '1.ttf'
+```
+
+也可以设置指定的背景图片，开启中文验证，指定验证码等
+
+```php
+//背景图片
+'useImgBg' => true 
+//中文验证
+'useZh' => true
+```
+
+## 图像处理功能
+
+### 1、图像处理功能
+
+1.图像处理功能不是系统内置的功能，需要通过composer引入进来
+
+```php
+composer require topthink/think-image
+```
+
+2.引入进来后，首先创建图像处理对象
+
+```php
+        $image = Image::open('test.png');
+```
+
+3.获得处理的图像对象后，可以得到这张图片的各种属性
+
+```php
+        //图片宽度
+        echo $image->width();
+        //图片高度
+        echo $image->height();
+        //图片类型 
+        echo $image->type();
+        //图片mime 
+        echo $image->mime();
+        //图片大小 
+        dump($image->size()) ;
+```
+
+4.使用crop()方法可以裁剪图片，并使用save()方法保存到指定路径
+
+5.可以点击追踪方法内部，参看源码参数，了解更多的传值方法
+
+```php
+//裁剪图片
+$image->crop(500,350)->save('crop1.png');
+```
+
+6.使用thumb()方法，可以生成缩略图，配合save()把缩略图保存下来
+
+```php
+//生成缩略图
+$image->thumb(500,500)->save('thumb.png');
+```
+
+虽然设置了宽和高，但是会等比例缩放
+
+可以点击追逐方法内部，第三个参数默认为：$type = self::THUMB_SCALING
+
+而这个常量的设置定义如下：
+
+```php
+/* 缩略图相关常量定义 */ 
+const THUMB_SCALING = 1; //常量，标识缩略图等比例缩放类型 
+const THUMB_FILLED = 2; //常量，标识缩略图缩放后填充类型 
+const THUMB_CENTER = 3; //常量，标识缩略图居中裁剪类型 ...
+```
+
+7.使用rotate()方法，可以旋转图片，默认是90度，参数可以设置
+
+```php
+        $image->rotate(180)->save('rotate.png');
+```
+
+8.save()方法可以配置的参数除了保存文件名的路径，还有以下几个
+
+save('路径',['类型',‘质量','是否隔行扫描'])，追踪到方法查看
+
+```php
+save($pathname, $type = null, $quality = 80, $interlace = true)
+```
+
+9.water()方法，可以给图片增加一个图片水印，默认位置为右下角，可看源码常量
+
+```php
+$image->where('image.png')->save('water.png');
+```
+
+10.text()方法，可以给图片增加一个文字水印
+
+```php
+$image->text('water',getcwd().'/1.ttf',20,'#ffffff')->save('text1.png');
+```
+
+## 数据库和模型的事件
+
+### 1、数据库事件
+
+1.当执行增删改查的时候，可以触发一些事件来执行额外的操作，这些额外的操作事件，可以部署在构造方法里等待激活执行
+
+2.数据库事件方法为DB::event('事件名','执行函’),具体事件名如下
+
+| 事件          | 描述                   |
+| :------------ | :--------------------- |
+| before_select | `select`查询前回调     |
+| before_find   | `find`查询前回调       |
+| after_insert  | `insert`操作成功后回调 |
+| after_update  | `update`操作成功后回调 |
+| after_delete  | `delete`操作成功后回调 |
+
+查询事件仅支持`find`、`select`、`insert`、`update`和`delete`方法。
+
+3.在控制器端，事件一般可以写在构造方法里，方便统一管理
+
+```php
+    public function initialize()
+    {
+        Db::event('before_select',function ($query){
+            echo '执行了批量查询操作!';
+        });
+        Db::event('after_update',function ($query){
+            echo '执行了修改操作';
+        });
+    }
+```
+
+### 2、模型事件
+
+1.和数据库事件类似，模型事件也是将事件存放在init静态方法里等待触发
+
+2.支持的事件类型更加的丰富，具体如下：
+
+| 事件           | 描述                 | 快捷方法      |
+| :------------- | :------------------- | :------------ |
+| before_insert  | 新增前               | beforeInsert  |
+| after_insert   | 新增后               | afterInsert   |
+| before_update  | 更新前               | beforeUpdate  |
+| after_update   | 更新后               | afterUpdate   |
+| before_write   | 写入前               | beforeWrite   |
+| after_write    | 写入后               | afterWrite    |
+| before_delete  | 删除前               | beforeDelete  |
+| after_delete   | 删除后               | afterDelete   |
+| before_restore | 恢复前（`V5.1.13+`） | beforeRestore |
+| after_restore  | 恢复后（`V5.1.13+`） | afterRestore  |
+
+3.在模型端创建init()方法，写入模型事件，可以使用event或快捷方式
+
+```php
+    // 模型初始化，必须设置static静态方法
+    protected static function init()
+    {
+        self::event('before_update',function($query){
+            echo '准备开始更新数据';
+        });
+        self::event('after_update',function($query){
+            echo '数据更新完毕';
+        });
+    }
+```
+
+## 关联模型
+
+### 1、关联模型定义
+
+1.关联模型，就是将表与表之间进行关联和对象化，更高效的操作数据
+
+2.例如有一张tp_user表，主键为：id，需要一张附属表来进行关联
+
+附属表：tp_profile，建立两个字段：user_id和hobby，外键是user_id
+
+3.User模型端，需要关联Profile
+
+```php
+class User extends Model
+{
+    public function profile()
+    {
+        // hasOne表示一对一关联，参数一表示附表，参数二外键，默认user_id
+        return $this->hasOne('Profile');
+    }
+}
+```
+
+创建一个控制器用于测试输出：Grade.php
+
+```php
+<?php
+namespace app\index\controller;
+use app\index\Model\User as UserModel;
+
+class Grade
+{
+    public function index()
+    {
+        $user = UserModel::get(19);
+        return json($user->profile);
+        return $user->profile->hobby;
+    }
+}
+```
+
+4.对于关联方式，系统提供了8种方案
+
+| hasOne         | 一对一     |
+| -------------- | ---------- |
+| belongsTo      | 一对多     |
+| hasMany        | 一对多     |
+| hasManyThrough | 远程一对多 |
+| belongsToMany  | 多对多     |
+| morphMary      | 多态一对多 |
+| morphOne       | 多态一对一 |
+| morphTo        | 多态       |
+
+5.一般来说，模型都在统一命名空间下，直接指定模型的类名即可，除非你设置的关联模型，不在同一命名空间下，就需要指定完整的路径
+
+```php
+//如果不在同一个命名空间下，请用命名空间路径指定关联
+return $this->hasOne('app\model\Profile','user_id');
+```
+
+6.采用一对一的关联模型，还有相对的反向关联
+
+```php
+<?php
+namespace app\index\Model;
+use think\Model;
+
+class Profile extends Model
+{
+    public function user()
+    {
+        return $this->belongsto('User');
+    }
+}
+```
+
+```php
+        use app\index\Model\Profile as ProfileModel;
+        
+        $profile = ProfileModel::get(1);
+        return $profile->user->email;
+```
+
+7.正反向关联也就是关联关系和相对的关联关系，
+
+| 一对一     | hasOne         | belongsTo     |
+| ---------- | -------------- | ------------- |
+| 一对多     | hasMany        | belongsTo     |
+| 多对多     | belongsToMany  | belongsToMany |
+| 远程一对多 | hasManyThrough | 不支持        |
+| 多态一对一 | morphOne       | morphTo       |
+| 多态一对多 | morphMany      | morphTo       |
+
+## 一对一关联
+
+### 1、hasOne模式
+
+1.hasOne模式，适合主表关联附表，具体设置方式如下
+
+```php
+hasOne('关联模型',['外键','主键']);
+return $this->hasOne('Profile','user_id','id');
+```
+
+关联模型（必须）：关联的模型或者类名
+
+外键：默认的外键规则是当前模型名（不含命名空间）+_id，例如user_id
+
+主键：当前模型主键，默认会自动获取也可以指定传入
+
+2.表与表关联后，实现查询
+
+```php
+$user = UserModel::get(19);
+return $user->profile->hobby;
+```
+
+3.使用save()方法，可以设置关联修改，通过主表修改附表字段的值
+
+```php
+        // 关联修改
+        $user = UserModel::get(19);
+        $user->profile->save(['hobby'=>'喜欢大姐姐']);
+```
+
+4.->profile属性可以修改数据，->profile()方法可以新增数据
+
+```php
+        // 关联新增
+        $user = UserModel::get(19);
+        $user->profile()->save(['hobby'=>'迷恋小姐姐']);
+```
+
+### 2、belongsTo模式
+
+1.belongsTo模式，适合附表关联主表，具体设置方式如下：
+
+```php
+belongsTo('关联模型',['外键','关联主键']);
+return $this->belongsTo('Profile','user_id','id');
+```
+
+关联模型（必须）：模型名和模型类名
+
+外键：当前模型外键，默认的外键名规则是关联模型+_id
+
+关联主键：关联模型主键，一般会自动获取也会指定传入
+
+2.对于belongsTo()的查询方案
+
+```php
+        $profile = ProfileModel::get(1); 
+        return $profile->user->email;
+```
+
+3.使用hasOne()也能模拟belongsTo()来进行查询
+
+```php
+        //参数一表示的是User 模型类的profile 方法，而非Profile 模型类
+        $user = UserModel::hasWhere('profile', ['id'=>2])->find(); 
+        return json($user)
+```
+
+```php
+        //采用闭包，这里是两张表操作，会导致id识别模糊，需要指明表
+        $user = UserModel::hasWhere('profile', function ($query) {
+        $query->where('profile.id', 2); 
+        })->select();
+        return json($user)
+```
+
+## 一对多关联查询
+
+### 1、hasMany模式
+
+1.hasMany模式，适合主表关联附表，实现一对多查询，具体设置方式如下：
+
+```php
+hasMany('关联模型',['外键','主键']);
+return $this->hasMany('Profile','user_id','id');
+```
+
+关联模型（必须）：模型名和模型类名
+
+外键：关联模型外键，默认的外键名规则是模型模型名+_id
+
+主键：当前模型主键，一般会自动获取也会指定传入
+
+2.表与表关联后，实现查询方案
+
+```php
+        $user = UserModel::get(19);
+        return json($user->profile);
+```
+
+3.使用->profile()方法模式，可以进一步进行数据的筛选
+
+```php
+        return  json($user->profile()->where('id','>',10)->select());
+```
+
+4.使用has()方法，查询关联附表的主表内容，比如大于等于2条的主表记录
+
+```php
+        $user = UserModel::has('profile','>=',2)->select();
+```
+
+5.使用hasWhere()方法，查询关联附表筛选后记录，比如兴趣审核通过的主表记录
+
+```php
+        $user = UserModel::hasWhere('Profile',['status'=>1])->select();
+```
+
+6.使用save()和saveAll()进行关联新增和批量关联新增，方法如下
+
+```php
+        $user = UserModel::get(19);
+        $user->profile()->save(['hobby'=>'测试新增']);
+        $user->profile()->saveAll([
+            ['hobby'=>'测试新增'],
+            ['hobby'=>'测试新增']
+        ]);
+```
+
+7.使用together()方法，可以删除主表内容时，将附表关联的内容全部删除
+
+```php
+        $user = UserModel::get(227,'prifile');
+        $user->together('prifile')->delete();
+```
+
+## 关联预载入
+
+### 1、关联预载入
+
+1.在普通的关联查询下，循环数据列表会执行n+1此SQL查询
+
+```php
+        $list = UserModel::all([19,20,21]);
+        foreach($list as $user){
+            dump($user->profile);
+        }
+```
+
+采用一对多的构建方式，打开trace调试工具，会得到四次查询
+
+如果采用关联预载入的方式吗，将会减少到两次，也就是起步一次，循环一次
+
+```php
+        $list = UserModel::with('profile')->all([19,20,21]);
+        foreach($list as $user){
+            dump($user->profile);
+        }
+```
+
+关联预载入减少了查询次数提高了性能，但是不支持多此调用
+
+如果主表关联了多个附表，都想要进行预载入，可以传入多个模型方法即可
+
+再创建一张表tp_book和tp_profile，关联tp_user
+
+```php
+<?php
+namespace app\index\Model;
+use think\Model;
+
+class Book extends Model
+{
+
+}
+```
+
+```php
+<?php
+
+namespace app\index\model;
+
+use think\Model;
+
+class User extends Model
+{
+
+    public function book()
+    {
+        // hasOne表示一对一关联，参数一表示附表，参数二附表外键，默认user_id，参数三主表的主键id
+        return $this->hasOne('Book','user_id','id');
+
+        // 一对多查询
+        // return $this->hasMany('Profile', 'user_id', 'id');
+    }
+ }   
+```
+
+```php
+        $list = UserModel::with('profile,book')->all([19,20,21]);
+        foreach($list as $user){
+            dump($user->profile.$user->book);
+        }
+```
+
+上面的方式，还有一种简要写法
+
+```php
+UserModel::all([19,20,21]),'profile,book');
+```
+
+2.with()是IN方式的查询，如果想要使用JOIN查询，可以使用withJoin()
+
+```php
+UserModel::WithJoin([19,20,21]),'profile,book');
+```
+
+3.在使用JOIN查询方案下，限定字段，可以使用withfile()方法来进行
+
+```php
+$list = UserModel::withJoin(['profile'=>function ($query) { 
+	$query->withField('hobby'); 
+}])->all([19, 20, 21]);
+```
+
+或者
+
+```php
+UserModel::withJoin(['profile'=>['hobby']])->all([19, 20, 21]);
+```
+
+4.关联预还提供了一个延迟预载入，就是先执行all()在load()载入
+
+```php
+$list = UserModel::all([19, 20, 21]);
+$list->load('profile');
+foreach ($list as $user) {
+	dump($user->profile); 
+}
+```
+
+## 关联统计和输出
+
+### 1、关联统计
+
+1.使用withCount()方法，可以统计主表关联附表的个数，输出用profile_count
+
+```php
+        $list = UserModel::withCount('profile')->all([19,20,21]);
+        foreach($list as $user){
+            echo $user->profile_count.'<br>';
+        };
+```
+
+2.关联统计的输出采用“关联方法名”_ count，这种结构输出
+
+不单单主持Count，还有如下统计方法，均可支持
+
+withMax()、withMin()、withSum()、withAvg()
+
+3.除了withCount()不需要指定字段，其它均需要指定统计字段
+
+```php
+        $list = UserModel::withSum(['profile','status')->all([19,20,21]);
+        foreach($list as $user){
+            echo $user->profile_sum.'<br>';
+        }
+```
+
+4.对于输出的属性，可以自定义
+
+```
+        $list = UserModel::withSum(['profile'=>'ps'],'status')->all([19,20,21]);
+        foreach($list as $user){
+            echo $user->ps.'<br>';
+        }
+```
+
+### 2、关联输出
+
+1.使用hidden()方法，隐藏主表字段或附属表的字段
+
+```php
+$list = UserModel::with('profile')->select(); 
+return json($list->hidden(['profile.status']));
+或： 
+return json($list ->hidden(['username','password','profile'=>['status','id']]));
+```
+
+2.使用visible()方法，只显示相关的字段
+
+```php
+$list->visible(['profile.status'])
+```
+
+3.使用append()方法，田间一个额外字段，比如另一个关联的对象属性
+
+```php
+$list->append(['book.title'])
+```
+
+## 多对多关联查询
+
+### 1、多对多关联
+
+1.一个用户对应一个用户档案资料，是一对一关联
+
+2.一篇文字对应多个评论，是一对多关联
+
+3.一个用户对应多个角色，而一个角色对应多个用户，多对多关系应用即使权限管理
+
+4.tp_user：用户表；tp_role：角色表；tp_access：中间表，access 表包含了 user 和 role 表的关联 id，多对多模式
+
+在 User.php 的模型中，设置多对多关联，方法如下： 
+
+```php
+public function roles()
+{ 
+	return $this->belongsToMany('Role', 'Access');
+}
+```
+
+在 roles 方法中，belongsToMany 为多对多关联，具体参数如下： 
+
+```php
+belongsToMany('关联模型','中间表',['外键','关联键']);
+$this->belongsToMany('Role', 'Access', 'role_id', 'user_id');
+```
+
+role.php 和 access.php 创建一个空模型即可，无须创建任
+
+注意：Role 继承 Model 即可，而中间表需要继承 Pivot
+
+ 5.在 user.php 中，创建 many()方法，用于测试，查询方式如下
+
+```php
+public function many() 
+{ 
+    //得到一个用户：蜡笔小新 
+    $user = UserModel::get(21); 
+    //获取这个用户的所有角色 
+    $roles = $user->roles; 
+    //输出这个角色所具有的权限
+    return json($roles);
+}
+```
+
+6.当我们要给一个用户创建一个角色时，用到多对多关联新增
+
+ 而关联新增后，不但会给 tp_role 新增一条数据，也会给 tp_access 新增一条
+
+```php
+$user->roles()->save(['type'=>'测试管理员']);
+$user->roles()->saveAll([[...],[...]]);
+```
+
+ 一般来说，上面的这种新增方式，用于初始化角色比较合适，也就是说，各种权限的角色，并不需要再新增了，都是初始制定好的。那么，我们真正需要就是通过用户表新增到中间表关联即可
+
+```php
+$user->roles()->save(1);
+或：
+$user->roles()->save(Role::get(1));
+$user->roles()->saveAll([1,2,3]);
+或：
+$user->roles()->attach(1);
+$user->roles()->attach(2, ['details'=>'测试详情']);
+```
+
+7.除了新增，还有直接删除中间表数据的方法
+
+```php
+$user->roles()->detach(2);
+```
+
