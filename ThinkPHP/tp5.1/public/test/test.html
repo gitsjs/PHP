@@ -1,0 +1,50 @@
+
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+	<meta charset="UTF-8">
+	<title>跨域提交</title>
+</head>
+<body>
+
+<form action="http://localhost/tp5.1/public/index/upload" method="post" enctype="multipart/form-data">
+	<input type="file" name="image">
+	<input type="submit" id="button" value="确定">
+</form>
+
+<!-- <form action="http://localhost/tp5.1/public/index/upload/uploads" method="post" enctype="multipart/form-data">
+	<input type="file" name="image[]">
+	<input type="file" name="image[]">
+	<input type="file" name="image[]">
+	<input type="submit" id="button" value="确定">
+</form> -->
+
+<!--<form action="http://localhost/tp5.1/public/verify/make" method="post" enctype="multipart/form-data">-->
+<!--	<input type="file" name="image">-->
+<!--	<input type="submit" id="button" value="确定">-->
+<!--</form>-->
+
+<!--<form action="http://localhost/tp5.1/public/rely?_ajax=1" method="post">-->
+<!--	<input type="text" name="name" value="Lee">-->
+<!--	<input type="hidden" name="_method" value="PUT">-->
+<!--	<input type="submit" id="button" value="确定">-->
+<!--</form>-->
+
+
+
+
+<!-- 引入jQuery文件 -->
+<script src="js/jquery-3.4.1.js"></script>
+<script>
+$("#button").click(function(){
+    $.ajax({
+    	type : "DELETE",
+		url : "http://localhost:8000/res/10",
+		success : function (res) {
+			console.log(res);
+		}
+    });
+});
+</script>
+</body>
+</html>

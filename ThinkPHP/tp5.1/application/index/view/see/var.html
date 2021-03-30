@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>模板输出</title>
+</head>
+
+<body>
+    {$user.username}.{$user.email}
+    <br>
+    {$obj->username}.{$obj->email}
+    <br>
+    {$user.name|default='没有用户名'}
+    <br>
+    {$Think.get.name}
+    <br>
+    {$password|md5}
+    <br>
+    {$user['email']|raw}
+    <br>
+    {$time|date='Y-m-d'}
+    <br>
+    {$number|format='%x'}
+    <br>
+    {$password|substr=0,3}
+    <br>
+    {$password|md5|upper|substr=0,3}
+    <br>
+    {:substr(strtoupper(md5($password)),0,3)}
+    <br>
+    <!-- 运算符 在模板中运算符有+、-、*、/、%、++、--等 -->
+    {$number+$number}
+    <br>
+    <!-- 模板也可以实现三元运算，包括其它写法 -->
+    {$name?'正确':'错误'}
+    {$name?='真'}
+    {$Think.get.name??'不存在'}
+    {$name?:'不存在'}
+</body>
+
+</html>

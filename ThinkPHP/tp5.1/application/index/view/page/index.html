@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分页</title>
+</head>
+
+<body>
+    <table border="1">
+        <tr>
+            <th>编号</th>
+            <th>姓名</th>
+            <th>性别</th>
+            <th>邮箱</th>
+            <th>价格</th>
+        </tr>
+        {volist name="list" id="obj"}
+        <tr>
+            <td>{$obj.id}</td>
+            <td>{$obj.username}</td>
+            <td>{$obj.gender}</td>
+            <td>{$obj.email}</td>
+            <td>{$obj.price}</td>
+        </tr>
+        {/volist}
+    </table>
+
+    {$list|raw}
+    {//$page|raw}
+</body>
+
+</html>

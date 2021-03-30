@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>比较和定义标签</title>
+</head>
+<body>
+    {eq name='username' value='Mr.lee'}
+    李先生
+    {/eq}
+    <br>
+    {eq name='username' value='$username'}
+    李小姐
+    {/eq}
+    <br>
+    {neq name='username' value='Mr.wang'}
+    两个值不相等
+    {/neq}
+    <br>
+    {eq name='username' value='Mr.lee'}
+    两个值相等
+    {else/}
+    两个值不相等
+    {/eq}
+    <br>
+    {egt name='number' value='10'}
+    大于等于10
+    {else/}
+    小于10
+    {/egt}
+    <br>
+    {compare name='username' value='Mr.lee' type='eq'}
+    两个值相等
+    {/compare}
+    <br>
+    {assign name='var' value='123'}
+    {$var}
+    <br>
+    {define name='PI' value='3.1415'}
+    {$Think.const.PI}
+    <br>
+    {php}
+    echo '原生编码';
+    {/php}
+</body>
+</html>

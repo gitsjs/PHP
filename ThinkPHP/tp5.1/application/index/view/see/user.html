@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>模板循坏标签</title>
+</head>
+
+<body>
+    {foreach $list as $key=>$obj}
+        {$key}.{$obj.id}.{$obj.username}({$obj.gender}).{$obj.email}<br>
+    {/foreach}
+    <hr>
+
+    {foreach :model('user')->all() as $key=>$obj}
+        {$key}.{$obj.id}.{$obj.username}({$obj.gender}).{$obj.email}<br>
+    {/foreach}
+    <hr>
+
+    {volist name='list' id='obj'}
+        {$key}.{$obj.id}.{$obj.username}({$obj.gender}).{$obj.email}<br>
+    {/volist}
+    <hr>
+
+    {volist name='list' id='obj'}
+        {$key}.{$obj.id}.{$obj.username}({$obj.gender}).{$obj.email}<br>
+    {/volist}
+    <hr>
+
+    {volist name='list' id='obj' offset='3' length='5'}
+        {$key}.{$obj.id}.{$obj.username}({$obj.gender}).{$obj.email}<br>
+    {/volist}
+    <hr>
+
+    {volist name='list' id='obj' mod='2'}
+        {eq name='mod' value='0'}
+            {$key}.{$obj.id}.{$obj.username}({$obj.gender}).{$obj.email}<br>
+        {/eq}
+    {/volist}
+    <hr>
+
+    {volist name=':model("user")->where("id",1000)->all()' id='obj' empty='没有任何数据'}
+        {$key}.{$obj.id}.{$obj.username}({$obj.gender}).{$obj.email}<br>
+    {/volist}
+    <hr>
+
+    {volist name='list' id='obj' key='k'}
+        {$k}.{$key}.{$obj.id}.{$obj.username}({$obj.gender}).{$obj.email}<br>
+    {/volist}
+
+    {for start='1' end='100' comparison='<' step='2' name='i' } {$i} {/for}<br>
+
+    <hr>
+    {foreach $list as $key=>$obj}
+        {eq name='obj.username' value='樱桃小丸子'}
+            {$key}.{$obj->id}.{$obj.username}({$obj.gender}).{$obj.email}<br>
+        {/eq}
+    {/foreach}
+</body>
+
+</html>
